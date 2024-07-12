@@ -4,41 +4,23 @@ import sys
 from pathlib import Path
 from typing import Union, Type
 from types import ModuleType
+import requests
 
 from src.setting.config import Config
 
 
-class Helper:
+class Tools:
 
-    def __init__(self, config: Config):
-        self.Config = config
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
 
-    def configure_logger(self, name: str) -> logging.Logger:
-        """Return a logger instance by name
-        Creates a file handler to log messages with level WARNING and above
-        Creates a stream handler to log messages with level INFO and above
-
-        Parameters:
-        name (str): Pass __name__ for module level logger
-        """
-
-        logger = logging.getLogger(name)
-        logger.setLevel(logging.INFO)
-
-        stdout_handler = logging.StreamHandler()
-        stdout_handler.setLevel(logging.INFO)
-        stdout_handler.setFormatter(logging.Formatter('[%(asctime)s - %(name)s] %(levelname)s: %(message)s'))
-
-        file_handler = logging.FileHandler(self.Config.DIR / "error.log")
-        file_handler.setLevel(logging.WARNING)
-        file_handler.setFormatter(
-            logging.Formatter('[%(asctime)s - %(name)s] %(levelname)s: %(message)s')
-        )
-
-        logger.addHandler(stdout_handler)
-        logger.addHandler(file_handler)
-
-        return logger
+    def web_response(self, url: str):
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            self.logger.error(f"Error fetching data: {response.status_code}")
+            return None
 
     def load_module(self, module_str: str) -> Union[ModuleType, Type]:
         """
@@ -71,4 +53,3 @@ class Helper:
 
         spec.loader.exec_module(module)
         return getattr(module, class_name) if class_name else module
-

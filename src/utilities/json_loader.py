@@ -1,6 +1,5 @@
 import json
-import random
-import string
+
 from datetime import datetime
 from pathlib import Path
 
@@ -14,16 +13,14 @@ class DateEncoder(json.JSONEncoder):
 
 class JsonLoader:
 
-    def __init__(self, file_path: Path):
-        self.file_path = file_path
+    def __init__(self, path: Path):
+        self.path = path
 
-    def read(self):
-        return json.loads(self.file_path.read_bytes())
+    def load(self):
+        return json.loads(self.path.read_bytes())
 
-    def write(self, data: dict):
-        self.file_path.write_text(json.dumps(data, indent=3, cls=DateEncoder))
+    def save(self, data: object):
+        self.path.write_text(json.dumps(data, indent=3, cls=DateEncoder))
 
-    @staticmethod
-    def random_char(length):
-        return "".join(random.choices(string.ascii_lowercase) for _ in range(length))
+
 

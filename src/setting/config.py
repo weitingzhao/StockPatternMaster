@@ -37,9 +37,10 @@ class Config:
     """
 
     WATCH = {"SECTORS": "sectors.csv"}
-    DATA_Folder = "exchange_data"
-
+    DATA_Folder = "data"
     TIME_ZONE = "America/New_York"
+
+    Has_Latest_Holidays = False
 
     # PLOT CONFIG
     PLOT_DAYS = 160
@@ -65,7 +66,6 @@ class Config:
     PLOT_DLV_L2_COLOR = "darkorange"
     PLOT_DLV_L3_COLOR = "royalblue"
     PLOT_DLV_DEFAULT_COLOR = "darkgrey"
-
     PLOT_AXHLINE_COLOR = "crimson"
     PLOT_TLINE_COLOR = "darkturquoise"
     PLOT_ALINE_COLOR = "mediumseagreen"
@@ -74,8 +74,8 @@ class Config:
     # DO NOT EDIT BELOW
     VERSION = "0.1.0"
 
-    def __init__(self, DIR: Path) -> None:
-        self.DIR = DIR
+    def __init__(self, dir: Path) -> None:
+        self.DIR = dir
         user_config = self.DIR / "setting" / "user.json"
 
         if user_config.exists():
