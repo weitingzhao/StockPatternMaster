@@ -9,6 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/data/symbols/NYSE" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/data/symbols/NYSE ARCA" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/data/symbols/NYSE MKT" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/research" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/logs" />
     </content>

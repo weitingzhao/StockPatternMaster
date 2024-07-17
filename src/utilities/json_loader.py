@@ -14,13 +14,16 @@ class DateEncoder(json.JSONEncoder):
 class JsonLoader:
 
     def __init__(self, path: Path):
-        self.path = path
+        self.Path = path
+
+    def is_file(self):
+        return self.Path.is_file()
 
     def load(self):
-        return json.loads(self.path.read_bytes())
+        return json.loads(self.Path.read_bytes())
 
     def save(self, data: object):
-        self.path.write_text(json.dumps(data, indent=3, cls=DateEncoder))
+        self.Path.write_text(json.dumps(data, indent=3, cls=DateEncoder))
 
 
 

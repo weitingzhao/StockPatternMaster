@@ -36,11 +36,25 @@ class Config:
 
     """
 
+    PRESET = {}
     WATCH = {"SECTORS": "sectors.csv"}
-    DATA_Folder = "data"
+
+    FOLDER_Data = "data"
+    FOLDER_Research = "research"
+
     TIME_ZONE = "America/New_York"
 
     Has_Latest_Holidays = False
+
+    # alphavantage.co API Key
+    API_KEY_Alphavantage = 'ZLV0FVBBQUBFWEZU'
+
+    # Delivery
+    DLV_L1 = 1
+    DLV_L2 = 1.5
+    DLV_L3 = 2
+    DLV_AVG_LEN = 60
+    VOL_AVG_LEN = 30
 
     # PLOT CONFIG
     PLOT_DAYS = 160

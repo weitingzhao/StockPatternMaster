@@ -1,0 +1,38 @@
+from src.instance import Instance
+import yfinance as yf
+
+
+class TradingsEngine:
+    def __init__(self, instance: Instance):
+        self._ = instance
+
+    def fetch(self, period="1d"):
+        tickers = yf.Tickers(" ".join(self._.LIST_Watch))
+        for ticker_symbol in self._.LIST_Watch:
+            # get ticker object
+            ticker = tickers.tickers[ticker_symbol]
+            # Save the history to a csv file
+            history = ticker.history(period=period)
+            self._.csv("tradings", f"{ticker_symbol}.csv").save_df(history)
+
+    def fetch_single(self, symbol: str):
+        msft = yf.Ticker("MSFT")
+
+        # get all stock info
+        print(f"info: {msft.info}")
+
+        # get historical market data
+        hist = msft.history(period="1mo")
+
+        # show meta information about the history (requires history() to be called first)
+        print(f"meta data: {msft.history_metadata}")
+
+        # show actions (dividends, splits, capital gains)
+        print(f"actions: {msft.actions}")
+        print(f"dividends: {msft.dividends}")
+        print(f"splits: {msft.splits}")
+        print(f"capital gains: {msft.capital_gains}")  # only for mutual funds & etfs
+
+        # show share count
+        df = msft.get_shares_full(start="2022-01-01", end=None)
+        print(df)

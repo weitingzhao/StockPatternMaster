@@ -35,14 +35,22 @@ class Instance:
         self.DIR = self.Config.DIR
 
         # <editor-fold desc="Declare file & folder">
-        self.FOLDER_Logs = self._path_exist(self.DIR / "logs")
-        self.FOLDER_Symbols = self._path_exist(self.DIR / self.Config.DATA_Folder / "symbols")
-        self.FOLDER_Daily = self._path_exist(self.DIR / self.Config.DATA_Folder / "daily")
-        self.FOLDER_Amibroker = self._path_exist(self.DIR / self.Config.DATA_Folder / "amibroker")
+        # data
+        self.FOLDER_Logs = self.Path_exist(self.DIR / "logs")
+        self.FOLDER_Symbols = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "symbols")
+        self.FOLDER_Daily = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
+        self.FOLDER_Amibroker = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "amibroker")
+        self.FOLDER_Tradings = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "tradings")
+        self.FOLDER_Watch = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "watch")
 
-        self.FILE_Meta = self._path_exist(self.DIR / self.Config.DATA_Folder / "meta.json")
-        self.FILE_Isin = self._path_exist(self.DIR / self.Config.DATA_Folder / "isin.csv")
+        self.FILE_Meta = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "meta.json")
+        self.FILE_Isin = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "isin.csv")
 
+        # research
+        self.FOLDER_Charts = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "charts")
+        self.FOLDER_Lines = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "lines")
+
+        self.FILE_WatchList = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "watch" / "mylist.csv")
         # </editor-fold>
 
         # <editor-fold desc="Declare Format">
@@ -65,7 +73,7 @@ class Instance:
         # Exception custom handler (Set the sys.excepthook)
         sys.excepthook = self._log_unhandled_exception
         # Tools
-        self.TOOLS = Tools(self.logger)
+        self.tools = Tools(self.logger)
         # </editor-fold>
 
         # <editor-fold desc="Initial Data">
@@ -77,6 +85,8 @@ class Instance:
         self.DATES = Dates(self.logger, self.tz_US, self.tz_local, self.META["lastUpdate"])
         # PLOT Plugins
         self.PLOT_PLUGINS = {}
+        # MyList
+        self.LIST_Watch = pd.read_csv(self.FILE_WatchList)["watchlist"].tolist()
         # </editor-fold>
 
     def _log_unhandled_exception(self, exc_type, exc_value, exc_traceback):
@@ -113,7 +123,7 @@ class Instance:
         return logger
 
     @staticmethod
-    def _path_exist(path: Path):
+    def Path_exist(path: Path):
         if path.exists():
             return path
         base, ext = os.path.splitext(path)
@@ -124,17 +134,16 @@ class Instance:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.touch()
 
-    @staticmethod
-    def Random_char(length):
-        return "".join(random.choices(string.ascii_lowercase) for _ in range(length))
+    def config_user(self):
+        return JsonLoader(self.DIR / "src" / "setting" / "user.json")
 
-    def New_Csv(self, *args) -> CsvLoader:
-        path = (self.DIR / self.Config.DATA_Folder).joinpath(*args)
+    def csv(self, *args) -> CsvLoader:
+        path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)
         return CsvLoader(path)
 
-    def New_Json(self, *args):
-        path = (self.DIR / self.Config.DATA_Folder).joinpath(*args)
+    def json(self, *args):
+        path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)
         return JsonLoader(path)
 
-    def New_Web(self, url: str) -> WebLoader:
+    def web(self, url: str) -> WebLoader:
         return WebLoader(self.logger, url)
