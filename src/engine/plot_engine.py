@@ -37,6 +37,7 @@ Delete Line: Right mouse click on line
 Delete all lines: Hold Shift key + right mouse click
 """
 
+
 def format_coordinations(x, _):
     s = " " * 5
     if df is None:
@@ -46,7 +47,7 @@ def format_coordinations(x, _):
 
     dt = df.index[round(x)]
     dt_str = f"{dt:%d %b %Y}".upper()
-    open, high, low, close, vol = df.loc[ dt, ["Open", "High", "Low", "Close", "Volume"]]
+    open, high, low, close, vol = df.loc[dt, ["Open", "High", "Low", "Close", "Volume"]]
     _str = f"{dt_str}{s}O: {open}{s}H: {high}{s}L: {low}{s}C: {close}{s}V: {vol:,.0f}"
 
     if "M_RS" in df.columns:
@@ -54,6 +55,7 @@ def format_coordinations(x, _):
     elif "RS" in df.columns:
         _str += f'{s}RS: {df.loc[dt, "RS"]}'
     return _str
+
 
 class PlotEngine:
     idx = len = 0
@@ -82,7 +84,7 @@ class PlotEngine:
     }
 
     def __init__(self, instance: Instance, args, plugins, parser: ArgumentParser):
-        plt.ion()
+        plt.ioff()
         self.args = args
         self._ = instance
         self.plugins = plugins
@@ -192,14 +194,13 @@ class PlotEngine:
 
         # Step 3. plot
         fig, axs = mpl.plot(df, **self.plot_args)
-
         # A workaround using ConciseDateFormatter and AutoDateLocator
         # with mplfinance
         # See github issue https://github.com/matplotlib/mplfinance/issues/643
 
         # Step 4. set xaxis locator and formatter
         # locator sets the major tick locations on xaxis
-        locator = mdates.AutoDateLocator(minticks=3, maxtickes=7)
+        locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
         # Formatter set the tick labels for the xaxis
         concise_formatter = mdates.ConciseDateFormatter(locator=locator)
 
@@ -238,7 +239,7 @@ class PlotEngine:
 
         default_lines = {
             "artists": [],
-            "daily" : {"length": 0, "lines": {}},
+            "daily": {"length": 0, "lines": {}},
             "weekly": {"length": 0, "lines": {}},
         }
 
@@ -248,7 +249,9 @@ class PlotEngine:
         else:
             self.lines = lines
 
+        print(f"Plotting [{symbol.upper()}]")
         mpl.show(block=True)
+        print(f"show [{symbol.upper()}]")
 
         if "addplot" in self.plot_args:
             self.plot_args["addplot"].clear()
@@ -263,7 +266,6 @@ class PlotEngine:
             if not lines_path.parent.exists():
                 lines_path.parent.mkdir(parents=True)
             lines_path.write_bytes(pickle.dumps(self.lines))
-
 
     # <editor-fold desc="Watch">
     def _load_watch_list(self, watch):
@@ -397,7 +399,7 @@ class PlotEngine:
                 continue
 
             try:
-                coord = tuple((df.index.get_loc(x),y) for x,y in coord)
+                coord = tuple((df.index.get_loc(x), y) for x, y in coord)
             except KeyError:
                 continue
 
@@ -483,17 +485,17 @@ class PlotEngine:
         self.lines["artists"].extend(line)
 
     # </editor-fold>
-    
+
     # <editor-fold desc="Key Press">
     def _on_key_press(self, event):
-        if event.key not in ("n","p","q","d","h"):
+        if event.key not in ("n", "p", "q", "d", "h"):
             return
         if event.key == "d":
             return self._toggle_draw_mode()
         if event.key == "h":
             if self.helpText is None:
-                x = self.main_ax.get_xline()[0]
-                y = self.main_ax.get_yline()[0]
+                x = self.main_ax.get_xlim()[0]
+                y = self.main_ax.get_ylim()[0]
                 self.helpText = self.main_ax.text(
                     x, y, HELP,
                     color="darkslategrey",
@@ -618,7 +620,6 @@ class PlotEngine:
             self.lines[self.tf]["length"] -= 1
             self.has_updated = True
 
-
         return
 
     def _get_closest_price(self, x, y):
@@ -645,13 +646,13 @@ class PlotEngine:
     @lru_cache(maxsize=6)
     def _prep_data(self, symbol):
         # Step 1. check data source
-        fpath = self._.FOLDER_Daily / f"{symbol}.csv"
-        if not fpath.is_file():
-            fpath = self.daily_dir / f"{symbol.lower()}_sme.csv"
-            if not fpath.is_file():
+        f_path = self._.FOLDER_Daily / f"{symbol}.csv"
+        if not f_path.is_file():
+            f_path = self.daily_dir / f"{symbol.lower()}_sme.csv"
+            if not f_path.is_file():
                 return None
         # Step 2. load data into data frame
-        df = self._.csv(fpath).get_data_frame(
+        df = self._.csv(f_path).get_data_frame(
             tf=self.tf,
             period=self.max_period,
             toDate=self.args.date
@@ -706,7 +707,7 @@ class PlotEngine:
         self.plot_args["xlim"] = (0, df.shape[0] + 15)
 
         if self.args.save:
-            img_name = f'"{symbol.repalce(" ","-")}.png'
+            img_name = f'"{symbol.repalce(" ", "-")}.png'
             self.plot_args["savefig"] = dict(fname=self.save_dir / img_name, dpi=300)
         # Step 2. add support and resistance line
         if self.args.snr:
@@ -720,7 +721,7 @@ class PlotEngine:
         if self.args.rs:
             added_plots.append(
                 mpl.make_addplot(
-                    data=df["RS"], panel=1, color=self._.Config.PLOT_RS_COLOR,width=2.5, ylabel="Dorsey RS"
+                    data=df["RS"], panel=1, color=self._.Config.PLOT_RS_COLOR, width=2.5, ylabel="Dorsey RS"
                 )
             )
         # Step 3.b. draw Mansfield Relative Strength plot
@@ -776,7 +777,6 @@ class PlotEngine:
         if len(added_plots) > 0:
             self.plot_args["addplot"] = added_plots
 
-
     # </editor-fold>
 
     def _get_max_period(self):
@@ -801,14 +801,3 @@ class PlotEngine:
             ticks.append(idx)
 
         return ticks
-
-
-
-
-
-
-
-
-
-
-

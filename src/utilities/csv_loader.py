@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from pathlib import Path
 from pandas import DataFrame
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
 
 
@@ -30,15 +30,22 @@ class CsvLoader:
         def get_date(start, chunk) -> datetime:
             end = chunk.find(b",", start)
             date_str = chunk[start:end].decode()
-            return datetime.strptime(date_str[:16], datetime_fmt) \
-                if len(date_str) > 10 else datetime.strptime(date_str, date_fmt)
+
+            if len(date_str) > 10:
+                return datetime.strptime(date_str[:25], "%Y-%m-%d %H:%M:%S%z")
+            else:
+                return datetime.strptime(date_str, "%Y-%m-%d")
 
         size = os.path.getsize(self.Path)
-        datetime_fmt = "%Y-%m-%d %H:%M"
-        date_fmt = "%Y-%m-%d"
+        if end_date is not None:
+            end_date = end_date.replace(tzinfo=timezone(timedelta(days=-1, seconds=72000)))
 
         if size <= chunk_size and not end_date:
-            return pd.read_csv(self.Path, index_col="Date", parse_dates=["Date"]).iloc[-period:]
+            df = pd.read_csv(self.Path, index_col="Date", dtype={"Date": object})
+            df["Date"] = pd.to_datetime(df["Date"], utc=True)
+            df.set_index(keys="Date", inplace=True)
+            return df.iloc[-period:]
+
 
         chunks_read = []  # store the bytes chunk in a list
         start_date = None
@@ -117,7 +124,9 @@ class CsvLoader:
             buffer = io.BytesIO(b"".join(chunks_read[::-1]))
 
         # Return result as DataFrame
-        df = pd.read_csv(buffer, parse_dates=["Date"], index_col="Date")
+        df = pd.read_csv(buffer, dtype={"Date": object})
+        df["Date"] = pd.to_datetime(df["Date"], utc=True)
+        df.set_index("Date", inplace=True)
         return df.loc[:end_date].iloc[-period:] if end_date else df.iloc[-period:]
 
     def get_data_frame(
@@ -139,6 +148,10 @@ class CsvLoader:
             "Close": "last",
             "Volume": "sum",
         }
+
+        # Reformat the index from Datetimeoffset to Date
+        df.index = df.index.map(lambda x: x.date())
+        df.index = pd.to_datetime(df.index)
 
         if tf == "weekly":
             return df[column].resample("W").apply(dct[column])[-period:] \

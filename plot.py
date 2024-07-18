@@ -1,11 +1,7 @@
 from datetime import datetime
-
 from src.engine.engine import Engine
-from src.setting.config import Config
-from src.utilities.plugin import Plugin
 from src.instance import Instance
 from argparse import ArgumentParser
-from pathlib import Path
 import mplfinance as mpl
 
 def process_plot(df, plot_args):
@@ -83,6 +79,7 @@ while True:
         if plotter.idx == plotter.len:
             break
         print(f"{plotter.idx + 1} of {plotter.len}", flush=True, end="\r"*11)
+        # Core function -> plot chart
         plotter.plot(symbol_list[plotter.idx])
 
     answer = plotter.key
