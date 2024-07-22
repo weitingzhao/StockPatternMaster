@@ -57,6 +57,15 @@ def format_coordinations(x, _):
     return _str
 
 
+def auto_redraw(func):
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        self.fig.canvas.draw_idle()
+        return result
+
+    return wrapper
+
+
 class PlotEngine:
     idx = len = 0
     line = []
@@ -175,9 +184,10 @@ class PlotEngine:
         self.draw_mode = False
         self.has_updated = False
         # Step 1.a meta
+        symbol = symbol.upper()
         meta = None
         if "," in symbol:
-            symbol, *meta = symbol.lower().split(",")
+            symbol, *meta = symbol.split(",")
         # Step 1.b. data frame
         df = self._prep_data(symbol)
         if df is None:
@@ -224,7 +234,7 @@ class PlotEngine:
             ax.xaxis.set_major_formatter(fixed_formatter)
             ax.format_coord = format_coordinations
 
-        fig.canvas.mpl_connect("key_press_event", self._on_key_press)
+        self.connection_id = fig.canvas.mpl_connect("key_press_event", self._on_key_press)
         self.fig = fig
         self.main_ax = axs[0]
 
@@ -422,7 +432,7 @@ class PlotEngine:
         line = axes.axhline(y, url=url, **self.line_args)
         self.lines["artists"].append(line)
 
-    def _add_horizontal_segment(self, axes, y, x_min, x_max, url=None):
+    def _add_horizontal_segment(self, axes, y, x_min, x_max=None, url=None):
         """Draw a horizontal line segment"""
         if df is None:
             return
@@ -442,7 +452,7 @@ class PlotEngine:
             # draw line till end of x-axis
             x_max = df.index.get_loc(df.index[-1])
 
-        self.segment_args["colors"] = (self._.Config.PLOT_HLINE_COLOR,)
+        self.segment_args["colors"] = (self._.Config.PLOT_HLINE_COLOR)
         line = axes.hlines(y, x_min, x_max, url=url, **self.segment_args)
         self.lines["artists"].append(line)
 
@@ -462,8 +472,8 @@ class PlotEngine:
 
         self.line_args["color"] = self._.Config.PLOT_TLINE_COLOR
         # Second click to get ending coordinates
-        line = axes.exline(*coords, url=url, **self.line_args)
-        self.lines["artists"].extend(line)
+        line = axes.axline(*coords, url=url, **self.line_args)
+        self.lines["artists"].append(line)
 
     def _add_aline(self, axes, coords, url=None):
         """Draw arbitrary line connecting 2 points"""
@@ -487,6 +497,7 @@ class PlotEngine:
     # </editor-fold>
 
     # <editor-fold desc="Key Press">
+    @auto_redraw
     def _on_key_press(self, event):
         if event.key not in ("n", "p", "q", "d", "h"):
             return
@@ -515,6 +526,7 @@ class PlotEngine:
         self.key = event.key
         plt.close("all")
 
+    @auto_redraw
     def _toggle_draw_mode(self):
         if self.draw_mode:
             self.draw_mode = False
@@ -525,11 +537,16 @@ class PlotEngine:
         else:
             self.draw_mode = True
             self.main_ax.set_title("DRAW MODE", **self.title_args)
-            self.events.append(self.fig.canvas.mpl_disconnect("key_release_event", self._on_key_release))
+
+            if self.connection_id is not None:
+                self.fig.canvas.mpl_disconnect(self.connection_id)
+            else:
+                self.events.append(self.fig.canvas.mpl_disconnect("key_release_event", self._on_key_release))
             self.events.append(self.fig.canvas.mpl_connect("button_press_event", self._on_button_press))
             self.events.append(self.fig.canvas.mpl_connect("pick_event", self._on_pick))
 
-    def _on_key_release(self, event):
+    @auto_redraw
+    def _on_key_release(self, event, *args, **kwargs):
         if event.key not in ("control", "shift", "ctrl+shift"):
             return
         if event.key == "ctrl+shift" and len(self.line) == 2:
@@ -540,6 +557,7 @@ class PlotEngine:
         self.main_ax.set_title("DRAW MODE", **self.title_args)
         self.line.clear()
 
+    @auto_redraw
     def _on_button_press(self, event):
         if df is None:
             return
@@ -595,6 +613,7 @@ class PlotEngine:
                 self.line.clear()
                 self.main_ax.set_title("DRAW MODE", **self.title_args)
 
+    @auto_redraw
     def _on_pick(self, event):
         if event.mouseevent.button == 3:
             return self._delete_line("", artist=event.artist)
@@ -625,7 +644,7 @@ class PlotEngine:
     def _get_closest_price(self, x, y):
         if df is None:
             return
-        _open, _high, _low, _close = df.loc[x]
+        _open, _high, _low, _close, *_ = df.iloc[x]
         if y >= _high:
             # if pointer is at or above high snap to high
             closest = _high
@@ -721,7 +740,8 @@ class PlotEngine:
         if self.args.rs:
             added_plots.append(
                 mpl.make_addplot(
-                    data=df["RS"], panel=1, color=self._.Config.PLOT_RS_COLOR, width=2.5, ylabel="Dorsey RS"
+                    data=df["RS"], panel=1, ylabel="Dorsey RS",
+                    color=self._.Config.PLOT_RS_COLOR, width=2.5
                 )
             )
         # Step 3.b. draw Mansfield Relative Strength plot
@@ -734,7 +754,7 @@ class PlotEngine:
                         color=self._.Config.PLOT_M_RS_COLOR, width=2.5
                     ),
                     mpl.make_addplot(
-                        data=zero_line, panel="lower", ylabel="dashed",
+                        data=zero_line, panel="lower", linestyle="dashed",
                         color=self._.Config.PLOT_M_RS_COLOR, width=1.5),
                 ]
             )
@@ -743,14 +763,14 @@ class PlotEngine:
             for period in self.args.sma:
                 if f"SMA_{period}" in df.columns:
                     added_plots.append(
-                        mpl.make_addplot(data=df[f"SMA_{period}"], ylabel=f"SMA{period}")
+                        mpl.make_addplot(data=df[f"SMA_{period}"], label=f"SMA{period}")
                     )
         # Step 3.d. draw exponential moving average
         if self.args.ema:
             for period in self.args.ema:
                 if f"EMA_{period}" in df.columns:
                     added_plots.append(
-                        mpl.make_addplot(data=df[f"EMA_{period}"], ylabel=f"EMA{period}")
+                        mpl.make_addplot(data=df[f"EMA_{period}"], label=f"EMA{period}")
                     )
         # Step 3.e. draw volume moving average
         if self.args.vol_sma:
@@ -759,7 +779,7 @@ class PlotEngine:
                     continue
                 added_plots.append(
                     mpl.make_addplot(
-                        data=df[f"VMA_{period}"], panel="lower", ylabel=f"VMA{period}", linewidths=0.7)
+                        data=df[f"VMA_{period}"], panel="lower", label=f"VMA{period}", linewidths=0.7)
                 )
         # Step 3.f. draw delivery levels
         if self.args.dlv and not df["DLV_QTY"].dropna().empty:

@@ -61,7 +61,7 @@ class Config:
     PLOT_WEEKS = 140
     PLOT_M_RS_LEN_D = 60
     PLOT_M_RS_LEN_W = 52
-    PLOT_RS_INDEX = "S&P 500"
+    PLOT_RS_INDEX = "^GSPC" #S&P 500
     MAGNET_MODE = True
 
     # PLOT THEMES AND COLORS

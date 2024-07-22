@@ -41,12 +41,12 @@ class Instance:
         self.FOLDER_Daily = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
         self.FOLDER_Amibroker = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "amibroker")
         self.FOLDER_Tradings = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "tradings")
-        self.FOLDER_Watch = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "watch")
 
         self.FILE_Meta = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "meta.json")
         self.FILE_Isin = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "isin.csv")
 
         # research
+        self.FOLDER_Watch = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "watch")
         self.FOLDER_Charts = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "charts")
         self.FOLDER_Lines = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "lines")
 

@@ -3,7 +3,7 @@ import logging
 import string
 import sys
 from pathlib import Path
-from random import random
+import random
 from typing import Union, Type
 from types import ModuleType
 import requests
@@ -18,7 +18,7 @@ class Tools:
 
     @staticmethod
     def random_char(length):
-        return "".join(random.choices(string.ascii_lowercase) for _ in range(length))
+        return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
 
     def web_response(self, url: str):
         response = requests.get(url)

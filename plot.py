@@ -14,6 +14,7 @@ _ = Engine(instance)
 parser = ArgumentParser(prog="plot.py")
 group = parser.add_mutually_exclusive_group(required=True)
 
+# Group arguments setup
 group.add_argument("--sym", nargs="+", metavar="SYM",help="Space separated list of stock symbols.")
 group.add_argument("--watch", metavar="NAME", help="load a watchlist file by NAME.")
 group.add_argument("--watch-add", nargs=2, metavar=("NAME", "FILENAME"),
@@ -23,6 +24,7 @@ group.add_argument("--preset", help="Load command line options saved by NAME.", 
 group.add_argument("--preset-rm", action="store", metavar="str", help="Remove preset by NAME.")
 group.add_argument("--ls", action="store_true", help="List available presets and watchlists.")
 
+# Parser arguments setup
 parser.add_argument("--preset-save", action="store", metavar="str",
                     help="Save command line options by NAME.")
 parser.add_argument("-s", "--save", action="store_true", help="Save chart as png.")
@@ -43,24 +45,27 @@ parser.add_argument("-r", "--resume", action="store_true",
                     help="Resume a watchlist from last viewed chart.")
 parser.add_argument("--dlv", action="store_true", help="Delivery Mode. Plot delivery data on chart.")
 
-
+# Register Plugins
 if len(instance.PLOT_PLUGINS):
     _.Plugins().register(instance.PLOT_PLUGINS, parser)
 
+# Parse the arguments
 args = parser.parse_args()
 if args.tf == "weekly" and args.dlv:
     exit("WARN: Delivery mode is not supported on weekly timeframe.")
 
+# Core function -> plot chart
 plotter = _.Plot(args, parser=parser)
 symbol_list = plotter.symbol_list
 
+# Save args and preset
 if args.preset:
     args = plotter.args
-
 if args.save:
     from concurrent.futures import ProcessPoolExecutor
     with ProcessPoolExecutor() as executor:
         for symbol in symbol_list:
+            print("executing", symbol, flush=True)
             executor.submit(process_plot, plotter.plot(symbol), plotter.plot_args)
     exit("Done")
 
