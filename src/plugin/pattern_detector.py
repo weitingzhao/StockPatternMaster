@@ -1,10 +1,11 @@
 import logging
 
+import numpy as np
 import pandas as pd
-from typing import NamedTuple, Optional
-
 from src.instance import Instance
+from typing import NamedTuple, Optional, TypeVar, Any
 
+T = TypeVar("T")
 
 class Point(NamedTuple):
     x: pd.Timestamp
@@ -49,6 +50,27 @@ class PatternDetector:
             return pos + 1
         raise TypeError("Expected Integer")
 
+    def get_max_min(self, df: pd.DataFrame, bars_left=6, bars_right=6) -> pd.DataFrame:
+        window = bars_left + 1 + bars_right
+        l_max_dt = []
+        l_min_dt = []
+        cols = ["P", "V"]
+
+        for win in df.rolling(window):
+            if win.shape[0] < window:
+                continue
+            idx = win.index[bars_left + 1]  # center candle
+            if win["High"].idxmax() == idx:
+                l_max_dt.append(idx)
+            if win["Low"].idxmin() == idx:
+                l_min_dt.append(idx)
+
+        maxima = pd.DataFrame(df.loc[l_max_dt, ["High", "Volume"]])
+        maxima.columns = cols
+        minima = pd.DataFrame(df.loc[l_min_dt, ["Low", "Volume"]])
+        minima.columns = cols
+        return pd.concat([maxima, minima]).sort_index()
+
     def get_atr(self, high: pd.Series, low: pd.Series, close: pd.Series, window=15) -> pd.Series:
         # Calculate true range
         tr = pd.DataFrame(index=high.index)
@@ -81,7 +103,7 @@ class PatternDetector:
 
     def is_double_top(
             self, a: float, b: float, c: float, d: float,
-            aVol: int, cVol: int, avgBarLength: float, atr: float) -> bool:
+            a_vol: int, c_vol: int, avg_bar_length: float, atr: float) -> bool:
         r"""
         Double Top
               A     C
@@ -94,15 +116,15 @@ class PatternDetector:
         """
         return (
                 c - b < atr * 4
-                and abs(a - c) <= avgBarLength * 0.5
-                and cVol < aVol
+                and abs(a - c) <= avg_bar_length * 0.5
+                and c_vol < a_vol
                 and b < min(a, c)
                 and b < d < c
         )
 
     def is_triangle(
             self, a: float, b: float, c: float, d: float, e: float, f: float,
-            avgBarLength: float) -> Optional[str]:
+            avg_bar_length: float) -> Optional[str]:
         r"""
               A
              /\        C
@@ -126,13 +148,13 @@ class PatternDetector:
          /      \/     D
         /        B             Ascending
         """
-        is_ac_straight_line = abs(a - c) <= avgBarLength
-        is_ce_straight_line = abs(c - e) <= avgBarLength
+        is_ac_straight_line = abs(a - c) <= avg_bar_length
+        is_ce_straight_line = abs(c - e) <= avg_bar_length
 
         if is_ac_straight_line and is_ce_straight_line and b < d < f < e:
             return "Ascending"
 
-        is_bd_straight_line = abs(b - d) <= avgBarLength
+        is_bd_straight_line = abs(b - d) <= avg_bar_length
 
         if is_bd_straight_line and a > c > e > f and f >= d:
             return "Descending"
@@ -144,7 +166,7 @@ class PatternDetector:
 
     def is_double_bottom(
             self, a: float, b: float, c: float, d: float,
-            aVol: int, cVol: int, avgBarLength: float, atr: float) -> bool:
+            a_vol: int, c_vol: int, avg_bar_length: float, atr: float) -> bool:
         r"""
         Double Bottom
           \
@@ -158,13 +180,13 @@ class PatternDetector:
 
         return (
                 b - c < atr * 4
-                and abs(a - c) <= avgBarLength * 0.5
-                and cVol < aVol
+                and abs(a - c) <= avg_bar_length * 0.5
+                and c_vol < a_vol
                 and b > max(a, c)
                 and b > d > c
         )
 
-    def is_hns(self, a: float, b: float, c: float, d: float, e: float, f: float, avgBarLength: float) -> bool:
+    def is_hns(self, a: float, b: float, c: float, d: float, e: float, f: float, avg_bar_length: float) -> bool:
         r"""
         Head and Shoulders
                     C
@@ -176,17 +198,17 @@ class PatternDetector:
          /      B         D     \
         /                        \
         """
-        shoulder_height_threshold = round(avgBarLength * 0.6, 2)
+        shoulder_height_threshold = round(avg_bar_length * 0.6, 2)
 
         return (
                 c > max(a, e)
                 and max(b, d) < min(a, e)
                 and f < e
-                and abs(b - d) < avgBarLength
+                and abs(b - d) < avg_bar_length
                 and abs(c - e) > shoulder_height_threshold
         )
 
-    def is_reverse_hns(self, a: float, b: float, c: float, d: float, e: float, f: float, avgBarLength: float) -> bool:
+    def is_reverse_hns(self, a: float, b: float, c: float, d: float, e: float, f: float, avg_bar_length: float) -> bool:
         r"""
         Reverse Head and Shoulders
         \
@@ -198,17 +220,17 @@ class PatternDetector:
                   \/
                   C
         """
-        shoulder_height_threshold = round(avgBarLength * 0.6, 2)
+        shoulder_height_threshold = round(avg_bar_length * 0.6, 2)
 
         return (
                 c < min(a, e)
                 and min(b, d) > max(a, e)
                 and f > e
-                and abs(b - d) < avgBarLength
+                and abs(b - d) < avg_bar_length
                 and abs(c - e) > shoulder_height_threshold
         )
 
-    def is_bearish_vcp(self, a: float, b: float, c: float, d: float, e: float, avgBarLength: float) -> bool:
+    def is_bearish_vcp(self, a: float, b: float, c: float, d: float, e: float, avg_bar_length: float) -> bool:
         r"""
         Volatility Contraction pattern
               B
@@ -220,12 +242,12 @@ class PatternDetector:
         B is the highest point in pattern
         D is second highest after B
         """
-        if c < a and abs(a - c) >= avgBarLength * 0.5:
+        if c < a and abs(a - c) >= avg_bar_length * 0.5:
             return False
 
         return (
-                abs(a - c) <= avgBarLength
-                and abs(b - d) >= avgBarLength * 0.8
+                abs(a - c) <= avg_bar_length
+                and abs(b - d) >= avg_bar_length * 0.8
                 and b > max(a, c, d, e)
                 and d > max(a, c, e)
                 and e > c
@@ -248,13 +270,13 @@ class PatternDetector:
         d1 = index.get_loc(date1)
         d2 = index.get_loc(date2)
 
-        lastIdx = index[-1]
-        lastIdxPos = index.get_loc(lastIdx)
+        last_idx = index[-1]
+        last_idx_pos = index.get_loc(last_idx)
 
-        assert isinstance(lastIdx, pd.Timestamp)
+        assert isinstance(last_idx, pd.Timestamp)
         assert isinstance(d1, int)
         assert isinstance(d2, int)
-        assert isinstance(lastIdxPos, int)
+        assert isinstance(last_idx_pos, int)
         assert isinstance(p1, float)
         assert isinstance(p2, float)
 
@@ -264,13 +286,32 @@ class PatternDetector:
         # slope m = change in y / change in x
         m = (p2 - p1) / (d2 - d1)
 
-        yintercept = p1 - m * d1  # b = y - mx
+        y_intercept = p1 - m * d1  # b = y - mx
 
         return Line(
             line=Coordinate(
-                start=Point(x=date1, y=m * d1 + yintercept),  # y = mx + b
-                end=Point(x=lastIdx, y=m * lastIdxPos + yintercept),
+                start=Point(x=date1, y=m * d1 + y_intercept),  # y = mx + b
+                end=Point(x=last_idx, y=m * last_idx_pos + y_intercept),
             ),
             slope=m,
-            y_int=yintercept,
+            y_int=y_intercept,
         )
+
+    def make_serializable(obj: T) -> T:
+        """Convert pandas.Timestamp and numpy.Float32 objects in obj
+        to serializable native types"""
+        def serialize(obj: Any) -> Any:
+            if isinstance(obj, (pd.Timestamp, np.generic)):
+                # Convert Pandas Timestamp to Python datetime or NumPy item
+                return (
+                    obj.isoformat() if isinstance(obj, pd.Timestamp) else obj.item()
+                )
+            elif isinstance(obj, (list, tuple)):
+                # Recursively convert lists and tuples
+                return tuple(serialize(item) for item in obj)
+            elif isinstance(obj, dict):
+                # Recursively convert dictionaries
+                return {key: serialize(value) for key, value in obj.items()}
+            return obj
+
+        return serialize(obj)

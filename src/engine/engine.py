@@ -1,4 +1,4 @@
-from src.engine.pattern_engine import PatternEngine
+import src.engine.pattern_engine as PatternEngine
 from src.engine.plot_engine import PlotEngine
 from src.engine.plugins_engine import PluginsEngine
 from src.engine.symbols_enigne import SymbolsEngine
@@ -23,5 +23,11 @@ class Engine:
     def Plot(self, args, parser) -> PlotEngine:
         return PlotEngine(self.Instance, args, self.Plugins(), parser)
 
-    def Pattern(self) -> PatternEngine:
-        return PatternEngine(self.Instance)
+    def Pattern_List(self):
+        return PatternEngine.get_pattern_dict()
+
+    def Pattern(self, pattern: str):
+        return self.Pattern_List()[pattern]
+
+    def Pattern_Detector(self):
+        return PatternEngine.PatternDetector(self.Instance)

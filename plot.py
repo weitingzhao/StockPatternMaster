@@ -101,9 +101,9 @@ while True:
         plotter.idx -= 1
     elif answer == "q":
         if args.watch:
-            userObj = instance.config_user() if instance.config_user().is_file() else {}
+            userObj = instance.config_json() if instance.config_json().is_file() else {}
             userObj["PLOT_RESUME"] = {"watch": args.watch, "idx": plotter.idx}
-            instance.config_user().save(userObj)
+            instance.config_json().save(userObj)
         exit("\nquiting")
 
 print("\nDone")

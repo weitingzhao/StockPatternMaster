@@ -288,27 +288,27 @@ class PlotEngine:
 
     def _save_watch(self, watch_name, watch_value):
         # Add
-        data = self._.config_user().load() if self._.config_user().is_file() else {}
+        data = self._.config_json().load() if self._.config_json().is_file() else {}
         if "WATCH" not in data:
             data["WATCH"] = {}
         data["WATCH"][watch_name.upper()] = watch_value
         # Save
-        self._.config_user().save(data)
+        self._.config_json().save(data)
         exit(f"Added watchlist '{watch_name}' with value '{watch_value}'")
 
     def _remove_watch(self, name):
         # Check
         if name.upper() not in getattr(self._.Config, "WATCH"):
             exit(f"Error: No watchlist named: '{name}'")
-        if not self._.config_user().is_file():
+        if not self._.config_json().is_file():
             exit("No config file")
         # Delete
-        data = self._.config_user().load()
+        data = self._.config_json().load()
         if "WATCH" not in data or name.upper() not in data["WATCH"]:
             exit(f"Error: No watchlist named: '{name}'")
         del data["WATCH"][name.upper()]
         # Save
-        self._.config_user().save(data)
+        self._.config_json().save(data)
         exit(f"Watchlist '{name}' removed.")
 
     # </editor-fold>
@@ -329,7 +329,7 @@ class PlotEngine:
         if self.args.watch and self.args.watch.upper() not in self._.Config.WATCH:
             exit(f"Error: No watchlist named: '{self.args.watch}'")
         # Prepare
-        data = self._.config_user() if self._.config_user().is_file() else {}
+        data = self._.config_json() if self._.config_json().is_file() else {}
         # get a copy of __dict__ and filter only truthy values into a dict
         opts = {k: v for k, v in self.args.__dict__.items() if v}
         del opts["preset_save"]
@@ -337,22 +337,22 @@ class PlotEngine:
             data["PRESET"] = {}
         data["PRESET"][preset] = opts
         # Save
-        self._.config_user().save(data)
+        self._.config_json().save(data)
         print(f"Preset saved as '{preset}'")
 
     def _remove_preset(self, preset):
         # Check
         if preset not in getattr(self._.Config, "PRESET"):
             exit(f"Error: No preset named: '{preset}'")
-        if not self._.config_user().is_file():
-            exit(f"File not found: {self._.config_user().Path}")
+        if not self._.config_json().is_file():
+            exit(f"File not found: {self._.config_json().Path}")
         # Delete
-        data = self._.config_user().load()
+        data = self._.config_json().load()
         if "PRESET" not in data or preset not in data["PRESET"]:
             exit(f"Error: No preset named: '{preset}'")
         del data["PRESET"][preset]
         # Save
-        self._.config_user().save(data)
+        self._.config_json().save(data)
         exit(f"Preset '{preset}' removed.")
 
     # </editor-fold>

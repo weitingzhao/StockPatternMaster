@@ -1,0 +1,13 @@
+{
+   "DATA_PATH": "~/Desktop/Stock/StockPatternMaster/data/daily",
+   "SYM_LIST": "~/Desktop/Stock/StockPatternMaster/research/watch/mylist.csv",
+   "LOADER": "treading_data_loader",
+   "PLOT_PLUGINS": {
+      "RSI": {
+         "name": "rsi",
+         "overbought": 80,
+         "oversold": 20,
+         "line_color": "teal"
+      }
+   }
+}

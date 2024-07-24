@@ -2,20 +2,18 @@ import re
 import os
 import sys
 import json
-import random
-import string
 from pathlib import Path
 from typing import Dict
 from zoneinfo import ZoneInfo
 import pandas as pd
 import logging
 
-from src.setting.config import Config
-from src.utilities.csv_loader import CsvLoader
+from src.config import Config
+from src.loaders.csv_loader import CsvLoader
 from src.utilities.dates import Dates
-from src.utilities.json_loader import JsonLoader
+from src.loaders.json_loader import JsonLoader
 from src.utilities.tools import Tools
-from src.utilities.web_loader import WebLoader
+from src.loaders.web_loader import WebLoader
 
 # import tzlocal
 pip = "pip" if "win" in sys.platform else "pip3"
@@ -27,12 +25,11 @@ except ModuleNotFoundError:
 
 class Instance:
 
-    def __init__(self, name: str = __name__,
-                 config: Config = Config(Path(__file__).parents[1])):
+    def __init__(self, name: str = __name__, config_path: Path = None):
         # Set the basic parameters
         self.__name__ = name
-        self.Config = config
-        self.DIR = self.Config.DIR
+        self.DIR = Path(__file__).parents[1]
+        self.Config: Config = Config(self.DIR / "user.json" if config_path is None else config_path)
 
         # <editor-fold desc="Declare file & folder">
         # data
@@ -50,7 +47,7 @@ class Instance:
         self.FOLDER_Charts = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "charts")
         self.FOLDER_Lines = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "lines")
 
-        self.FILE_WatchList = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "watch" / "mylist.csv")
+        self.FILE_WatchList = self.Path_exist(Path(self.Config.__dict__["SYM_LIST"]))
         # </editor-fold>
 
         # <editor-fold desc="Declare Format">
@@ -134,8 +131,12 @@ class Instance:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.touch()
 
-    def config_user(self):
+    def config_json(self):
         return JsonLoader(self.DIR / "src" / "setting" / "user.json")
+
+    def config_new(self, user_path: Path):
+        self.Config = Config(user_path)
+        return self.Config
 
     def csv(self, *args) -> CsvLoader:
         path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)

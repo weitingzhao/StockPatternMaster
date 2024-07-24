@@ -1,10 +1,6 @@
-import string
-from pathlib import Path
-from datetime import datetime
-from random import random
-from typing import Any, List, Tuple, Optional
+from typing import List, Tuple
 import pandas as pd
-from src.setting.config import Config
+from src.config import Config
 
 
 class Utils:

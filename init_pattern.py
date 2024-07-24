@@ -4,11 +4,11 @@ import sys
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union, Dict
+from typing import List
 
 from src.engine.engine import Engine
 from src.instance import Instance
-from src.utilities.abstract_loader import AbstractLoader
+from src.loaders.abstract_loader import AbstractLoader
 
 try:
     from tqdm import tqdm

@@ -8,8 +8,6 @@ from typing import Union, Type
 from types import ModuleType
 import requests
 
-from src.setting.config import Config
-
 
 class Tools:
 

@@ -88,20 +88,16 @@ class Config:
     # DO NOT EDIT BELOW
     VERSION = "0.1.0"
 
-    def __init__(self, dir: Path) -> None:
-        self.DIR = dir
-        user_config = self.DIR / "setting" / "user.json"
-
-        if user_config.exists():
-            dct = json.loads(user_config.read_bytes())
-
+    def __init__(self, user_config: Path) -> None:
+        self.user_config = user_config
+        if self.user_config.exists():
+            dct = json.loads(self.user_config.read_bytes())
             if "WATCH" in dct:
                 dct["WATCH"].update(self.WATCH)
-
             self.__dict__.update(dct)
 
-    def to_list(self, filename: str):
-        return (self.DIR / "data" / filename).read_text().strip("\n").split("\n")
+    def to_list(self):
+        return Path(self.user_config).read_text().strip("\n").split("\n")
 
     def __str__(self):
         txt = f"SPM1 | Version: {self.VERSION}\n"
