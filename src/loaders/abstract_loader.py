@@ -20,7 +20,7 @@ class AbstractLoader(ABC):
     # Value must be string used internally for resampling or other purposes
     timeframes: dict
     # The currently active timeframe.
-    tf: str
+    timeframe: str
     # Current status of Loader. Close method will not be called, if value is True
     closed: bool
 

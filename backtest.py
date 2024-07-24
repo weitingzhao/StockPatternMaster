@@ -79,7 +79,8 @@ def scan_pattern(
 
 
 def process(
-        symbol_list: List, fns: Tuple[Callable, ...],
+        symbol_list: List,
+        fns: Tuple[Callable, ...],
         futures: List[concurrent.futures.Future]
 ) -> List[dict]:
     patterns: List[dict] = []
@@ -182,7 +183,7 @@ def process(
                     return []
 
     patterns_to_output.append({
-        "timeframe": loader.tf,
+        "timeframe": loader.timeframe,
         "end_date": args.date.isoformat() if args.date else None,
     })
     return patterns_to_output
@@ -306,7 +307,7 @@ fn_dict = _.Pattern_List()
 fn = fn_dict[key]
 
 instance.logger.info(
-    f"Scanning `{key.upper()}` patterns on `{loader.tf}`. Press Ctrl - C to exit"
+    f"Scanning `{key.upper()}` patterns on `{loader.timeframe}`. Press Ctrl - C to exit"
 )
 
 data = args.file.read_text().strip().split("\n") if args.file else args.sym

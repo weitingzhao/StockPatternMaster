@@ -7,6 +7,7 @@ from typing import NamedTuple, Optional, TypeVar, Any
 
 T = TypeVar("T")
 
+
 class Point(NamedTuple):
     x: pd.Timestamp
     y: float
@@ -27,9 +28,7 @@ class PatternDetector:
 
     def __init__(self, instance: Instance):
         self._ = instance
-
-    def logger(self) -> logging.Logger:
-        return self._.logger
+        self.logger = self._.logger
 
     def get_prev_index(self, index: pd.DatetimeIndex, idx: pd.Timestamp) -> int:
         pos = index.get_loc(idx)
@@ -297,15 +296,13 @@ class PatternDetector:
             y_int=y_intercept,
         )
 
-    def make_serializable(obj: T) -> T:
+    def make_serializable(self, obj: T) -> T:
         """Convert pandas.Timestamp and numpy.Float32 objects in obj
         to serializable native types"""
         def serialize(obj: Any) -> Any:
             if isinstance(obj, (pd.Timestamp, np.generic)):
-                # Convert Pandas Timestamp to Python datetime or NumPy item
-                return (
-                    obj.isoformat() if isinstance(obj, pd.Timestamp) else obj.item()
-                )
+                # Convert Pandas' Timestamp to Python datetime or NumPy item
+                return obj.isoformat() if isinstance(obj, pd.Timestamp) else obj.item()
             elif isinstance(obj, (list, tuple)):
                 # Recursively convert lists and tuples
                 return tuple(serialize(item) for item in obj)
@@ -313,5 +310,4 @@ class PatternDetector:
                 # Recursively convert dictionaries
                 return {key: serialize(value) for key, value in obj.items()}
             return obj
-
         return serialize(obj)

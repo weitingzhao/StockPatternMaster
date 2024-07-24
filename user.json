@@ -1,7 +1,8 @@
 {
    "DATA_PATH": "~/Desktop/Stock/StockPatternMaster/data/daily",
    "SYM_LIST": "~/Desktop/Stock/StockPatternMaster/research/watch/mylist.csv",
-   "LOADER": "treading_data_loader",
+   "LOADER": "treading_data_loader:TreadingDataLoader",
+   "DEFAULT_TF": "daily",
    "PLOT_PLUGINS": {
       "RSI": {
          "name": "rsi",

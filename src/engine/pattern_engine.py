@@ -205,7 +205,6 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 
         a_idx = pivots.loc[:idx_before_c, "P"].idxmin()
         a = pivots.at[a_idx, "P"]
-
         b_idx = pivots.loc[a_idx:c_idx, "P"].idxmax()
         b = pivots.at[b_idx, "P"]
 
@@ -215,26 +214,20 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
             break
 
         idx_after_c = pivots.index[pos]
-
         e_idx = pivots.loc[idx_after_c:, "P"].idxmin()
         e = pivots.at[e_idx, "P"]
-
         d_idx = pivots.loc[c_idx:e_idx, "P"].idxmax()
         d = pivots.at[d_idx, "P"]
 
         if pivots.index.has_duplicates:
             if isinstance(a, (pd.Series, str)):
                 a = pivots.loc[a_idx, "P"].iloc[1]
-
             if isinstance(b, (pd.Series, str)):
                 b = pivots.loc[b_idx, "P"].iloc[0]
-
             if isinstance(c, (pd.Series, str)):
                 c = pivots.loc[c_idx, "P"].iloc[1]
-
             if isinstance(d, (pd.Series, str)):
                 d = pivots.loc[d_idx, "P"].iloc[0]
-
             if isinstance(e, (pd.Series, str)):
                 e = pivots.loc[e_idx, "P"].iloc[1]
 
@@ -254,9 +247,7 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                 continue
 
             neckline_price = min(b, d)
-
             highest_after_e = df.loc[e_idx:, "High"].max()
-
             if (
                 highest_after_e > neckline_price
                 and abs(highest_after_e - neckline_price) > avgBarLength
@@ -275,9 +266,7 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
             x = df.index.get_loc(df.index[-1])
 
             assert isinstance(x, int)
-
             y = tline.slope * x + tline.y_int
-
             # if close price is greater than neckline (trendline), skip
             if f > y:
                 c_idx, c = e_idx, e
@@ -296,7 +285,6 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                 lines = (entry_line, tline.line, ab, bc, cd, de, ef)
             else:
                 lines = (tline.line, ab, bc, cd, de, ef)
-
             _.logger.debug(f"{sym} - HNSU")
 
             return dict(
@@ -310,7 +298,6 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                 y_intercept=tline.y_int,
                 lines=lines,
             )
-
         c_idx, c = e_idx, e
 
 
