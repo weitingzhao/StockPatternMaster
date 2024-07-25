@@ -10,11 +10,11 @@ class SymbolsEngine:
     def fetch_stock_list(self):
         url = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={self.API_KEY}'
         data = self._.web(url).request()
-        self._.csv("symbols", f"FullSymbols.csv").save_str(data)
+        self._.csv_tradings("symbols", f"FullSymbols.csv").save_str(data)
 
     def analyze_stock_list(self):
         # Load the stock list
-        pd_symbols = self._.csv("symbols", "FullSymbols.csv").load()
+        pd_symbols = self._.csv_tradings("symbols", "FullSymbols.csv").load()
 
         # step 1. Filter by status
         pd_active_symbols = pd_symbols[pd_symbols['status'] == 'Active']
@@ -23,7 +23,7 @@ class SymbolsEngine:
         # step 3. Export grouped data to separate lists
         pd_grouped_list = {name: group for name, group in pd_symbols_grouped}
 
-        # Save symbols into seperate csv files
+        # Save symbols into separate csv files
         summary = {'count': {
             'total_exchanges': len(pd_active_symbols["exchange"].unique()),
             'total_derivatives': len(pd_active_symbols["assetType"]),
@@ -31,7 +31,7 @@ class SymbolsEngine:
         for name, group in pd_grouped_list.items():
             exchange = name[0]
             derivative = name[1]
-            csv = self._.csv("symbols", exchange, f"{derivative}.csv")
+            csv = self._.csv_tradings("symbols", exchange, f"{derivative}.csv")
             csv.save_df(group)
 
             # Collect summary information

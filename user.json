@@ -3,6 +3,7 @@
    "SYM_LIST": "~/Desktop/Stock/StockPatternMaster/research/watch/mylist.csv",
    "LOADER": "treading_data_loader:TreadingDataLoader",
    "DEFAULT_TF": "daily",
+   "SAVE_FOLDER": "/home/vision/Desktop/Stock/StockPatternMaster/research/patterns",
    "PLOT_PLUGINS": {
       "RSI": {
          "name": "rsi",

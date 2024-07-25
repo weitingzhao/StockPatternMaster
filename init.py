@@ -17,6 +17,7 @@ group.add_argument("-f", "--fetch", action="store_true", help="fetch full symbol
 group.add_argument("-a", "--analysis", action="store_true", help="analysis symbols")
 group.add_argument("-s", "--symbols", action="store_true", help="fetch symbols from yfinance.")
 
+group.add_argument("-i", "--info", action="store_true", help="fetch symbols info yfinance.")
 parser.add_argument("-p","--period", type=str, metavar="str",
                    help="symbols history, default 1d, Valid periods: 1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max")
 
@@ -35,7 +36,9 @@ if args.fetch:
     _.Symbols().fetch_stock_list()
 if args.analysis:
     _.Symbols().analyze_stock_list()
+if args.info:
+    _.Tradings().fetch_info()
 if args.symbols:
-    _.Tradings().fetch(period=period)
+    _.Tradings().fetch_tradings_history(period=period)
 
 

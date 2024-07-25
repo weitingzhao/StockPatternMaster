@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 import pandas as pd
 from src.instance import Instance
@@ -82,11 +80,11 @@ class PatternDetector:
     def is_bullish_vcp(self, a: float, b: float, c: float, d: float, e: float, avg_bar_length: float) -> bool:
         r"""Volatility Contraction pattern
            A        C
-             \      /\    E
-              \    /  \  /
-               \  /    \/
-                \/      D
-                 B
+            \      /\    E
+             \    /  \  /
+              \  /    \/
+               \/      D
+                B
         B is the lowest point in pattern
         D is second lowest after B
         """
@@ -125,21 +123,19 @@ class PatternDetector:
             self, a: float, b: float, c: float, d: float, e: float, f: float,
             avg_bar_length: float) -> Optional[str]:
         r"""
-              A
+             A
              /\        C
             /  \      /\    E
            /    \    /  \  /\
           /      \  /    \/  F
          /        \/      D
         /         B            Symmetric
-
-            A
+           A
            /\      C
           /  \    /\    E
          /    \  /  \  /\
         /      \/    \/  F
                B     D         Descending
-
              A       C     E
             /\      /\    /\
            /  \    /  \  /  \

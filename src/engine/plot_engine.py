@@ -171,7 +171,7 @@ class PlotEngine:
             idx_path = self.daily_dir / f"{self._.Config.PLOT_RS_INDEX}.csv"
             if not idx_path.is_file():
                 exit(f"Index file not found: {idx_path}")
-            self.idx_cl = self._.csv(idx_path).get_data_frame(
+            self.idx_cl = self._.csv_tradings(idx_path).get_data_frame(
                 tf=self.tf,
                 period=self.max_period,
                 column="Close",
@@ -198,7 +198,7 @@ class PlotEngine:
         self._prep_arguments(symbol, df, meta)
 
         # Step 2. run plugins
-        self.plugins.run(df, self)
+        self.plugins.process_by_pattern_name(df, self)
         if self.args.save:
             return df
 
@@ -671,7 +671,7 @@ class PlotEngine:
             if not f_path.is_file():
                 return None
         # Step 2. load data into data frame
-        df = self._.csv(f_path).get_data_frame(
+        df = self._.csv_tradings(f_path).get_data_frame(
             tf=self.tf,
             period=self.max_period,
             toDate=self.args.date

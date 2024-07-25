@@ -1,8 +1,10 @@
 import pandas as pd
-from typing import Optional, Dict, Union, Callable
 from src.plugin.pattern_detector import PatternDetector
+from typing import Optional, Dict, Union, Callable, Tuple
 
 
+def get_pattern_list() -> list:
+    return list(get_pattern_dict().keys())
 def get_pattern_dict() -> Dict[str, Union[str, Callable]]:
     return {
         "all": "all",
@@ -10,12 +12,30 @@ def get_pattern_dict() -> Dict[str, Union[str, Callable]]:
         "bear": "bear",
         "vcpu": find_bullish_vcp,
         "vcpd": find_bearish_vcp,
-        "hnsd": find_hns,
-        "hnsu": find_reverse_hns,
         "dbot": find_double_bottom,
         "dtop": find_double_top,
+        "hnsd": find_hns,
+        "hnsu": find_reverse_hns,
         "trng": find_triangles,
     }
+
+
+def get_pattern_tuple(pattern_name: str) -> Tuple[Callable, ...]:
+    # get all support patterns
+    fn_dict = get_pattern_dict()
+    # get function out
+    fn = fn_dict[pattern_name]
+    # base on fn style and name return pattern tuples
+    if callable(fn):
+        return (fn,)
+    elif fn == "bull":
+        bull_list = ("vcpu", "hnsu", "dbot")
+        return tuple(v for k, v in fn_dict.items() if k in bull_list and callable(v))
+    elif fn == "bear":
+        bear_list = ("vcpd", "hnsd", "dtop")
+        return tuple(v for k, v in fn_dict.items() if k in bear_list and callable(v))
+    else:
+        return tuple(v for k, v in fn_dict.items() if k in fn_dict.keys()[3:] and callable(v))
 
 
 def find_bullish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
@@ -236,11 +256,11 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 
         if _.is_reverse_hns(a, b, c, d, e, f, avgBarLength):
             if (
-                a == df.at[a_idx, "High"]
-                or b == df.at[b_idx, "Low"]
-                or c == df.at[c_idx, "High"]
-                or d == df.at[d_idx, "Low"]
-                or e == df.at[e_idx, "High"]
+                    a == df.at[a_idx, "High"]
+                    or b == df.at[b_idx, "Low"]
+                    or c == df.at[c_idx, "High"]
+                    or d == df.at[d_idx, "Low"]
+                    or e == df.at[e_idx, "High"]
             ):
                 # Make sure pattern is well formed
                 c_idx, c = e_idx, e
@@ -249,8 +269,8 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
             neckline_price = min(b, d)
             highest_after_e = df.loc[e_idx:, "High"].max()
             if (
-                highest_after_e > neckline_price
-                and abs(highest_after_e - neckline_price) > avgBarLength
+                    highest_after_e > neckline_price
+                    and abs(highest_after_e - neckline_price) > avgBarLength
             ):
                 # check if neckline was breached after pattern formation
                 c_idx, c = e_idx, e
@@ -324,13 +344,13 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
         if pos_after_a >= pivot_len:
             break
 
-        b_idx = pivots.loc[pivots.index[pos_after_a] :, "P"].idxmax()
+        b_idx = pivots.loc[pivots.index[pos_after_a]:, "P"].idxmax()
         b = pivots.at[b_idx, "P"]
         pos_after_b = _.get_next_index(pivots.index, b_idx)
         if pos_after_b >= pivot_len:
             break
 
-        d_idx = pivots.loc[pivots.index[pos_after_b] :, "P"].idxmax()
+        d_idx = pivots.loc[pivots.index[pos_after_b]:, "P"].idxmax()
         d = pivots.at[d_idx, "P"]
         c_idx = pivots.loc[b_idx:d_idx, "P"].idxmin()
         c = pivots.at[c_idx, "P"]
@@ -352,8 +372,8 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 
         if _.is_bearish_vcp(a, b, c, d, e, avgBarLength):
             if (
-                d_idx != df.loc[d_idx:, "Close"].idxmax()
-                or c_idx != df.loc[c_idx:, "Close"].idxmin()
+                    d_idx != df.loc[d_idx:, "Close"].idxmax()
+                    or c_idx != df.loc[c_idx:, "Close"].idxmin()
             ):
                 # check that the pattern is well formed
                 if pivots.index[-1] == d_idx or pivots.index[-1] == c_idx:
@@ -384,6 +404,7 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
         # This may not be the lowest pivot, so additional checks are required.
         a_idx, a = c_idx, c
 
+
 def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Double Top.
     Returns None if no patterns found.
@@ -407,7 +428,7 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
         if idx >= pivot_len:
             break
 
-        c_idx = pivots.loc[pivots.index[idx] :, "P"].idxmax()
+        c_idx = pivots.loc[pivots.index[idx]:, "P"].idxmax()
         c, cVol = pivots.loc[c_idx, ["P", "V"]]
 
         b_idx = pivots.loc[a_idx:c_idx, "P"].idxmin()
@@ -436,17 +457,17 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
 
         if _.is_double_top(a, b, c, d, aVol, cVol, avgBarLength, atr):
             if (
-                a == df.at[a_idx, "Low"]
-                or b == df.at[b_idx, "High"]
-                or c == df.at[c_idx, "Low"]
+                    a == df.at[a_idx, "Low"]
+                    or b == df.at[b_idx, "High"]
+                    or c == df.at[c_idx, "Low"]
             ):
                 a_idx, a, aVol = c_idx, c, cVol
                 continue
 
             # check if Level C has been breached after it was formed
             if (
-                c_idx != df.loc[c_idx:, "Close"].idxmax()
-                or b_idx != df.loc[b_idx:, "Close"].idxmin()
+                    c_idx != df.loc[c_idx:, "Close"].idxmax()
+                    or b_idx != df.loc[b_idx:, "Close"].idxmin()
             ):
                 # Level C is breached, current pattern is not valid
                 a_idx, a, aVol = c_idx, c, cVol
@@ -470,6 +491,7 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
             )
 
         a_idx, a, aVol = c_idx, c, cVol
+
 
 def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Head and Shoulders - Bearish
@@ -527,11 +549,11 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
 
         if _.is_hns(a, b, c, d, e, f, avg_bar_length):
             if (
-                a == df.at[a_idx, "Low"]
-                or b == df.at[b_idx, "High"]
-                or c == df.at[c_idx, "Low"]
-                or d == df.at[d_idx, "High"]
-                or e == df.at[e_idx, "Low"]
+                    a == df.at[a_idx, "Low"]
+                    or b == df.at[b_idx, "High"]
+                    or c == df.at[c_idx, "Low"]
+                    or d == df.at[d_idx, "High"]
+                    or e == df.at[e_idx, "Low"]
             ):
                 # Make sure the pattern is well-formed and
                 # pivots are correctly anchored to highs and lows
@@ -542,8 +564,8 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
             lowest_after_e = df.loc[e_idx:, "Low"].min()
 
             if (
-                lowest_after_e < neckline_price
-                and abs(lowest_after_e - neckline_price) > avg_bar_length
+                    lowest_after_e < neckline_price
+                    and abs(lowest_after_e - neckline_price) > avg_bar_length
             ):
                 # check if the neckline was breached after pattern formation
                 c_idx, c = e_idx, e
@@ -594,6 +616,7 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
 
         c_idx, c = e_idx, e
 
+
 def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Triangles - Symmetric, Ascending, Descending.
     Returns None if no patterns found.
@@ -639,7 +662,7 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
         if pos_after_c >= pivot_len:
             break
 
-        e_idx = pivots.loc[pivots.index[pos_after_c] :, "P"].idxmax()
+        e_idx = pivots.loc[pivots.index[pos_after_c]:, "P"].idxmax()
         e = pivots.at[e_idx, "P"]
 
         if pivots.index.has_duplicates:
@@ -667,9 +690,9 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
             # check if high of C or low of D has been breached
             # Check if A is indeed the pivot high
             if (
-                a == df.at[a_idx, "Low"]
-                or c_idx != df.loc[c_idx:, "Close"].idxmax()
-                or d_idx != df.loc[d_idx:, "Close"].idxmin()
+                    a == df.at[a_idx, "Low"]
+                    or c_idx != df.loc[c_idx:, "Close"].idxmax()
+                    or d_idx != df.loc[d_idx:, "Close"].idxmin()
             ):
                 a_idx, a = c_idx, c
                 continue
@@ -682,17 +705,17 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
                 break
 
             if triangle == "Ascending" and (
-                upper.slope > 0.1 and lower.slope < 0.2
+                    upper.slope > 0.1 and lower.slope < 0.2
             ):
                 break
 
             if triangle == "Descending" and (
-                lower.slope < -0.1 and upper.slope > -0.2
+                    lower.slope < -0.1 and upper.slope > -0.2
             ):
                 break
 
             if triangle == "Symmetric" and (
-                upper.slope > -0.2 and lower.slope < 0.2
+                    upper.slope > -0.2 and lower.slope < 0.2
             ):
                 break
 
@@ -711,4 +734,3 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
             )
 
         a_idx, c = c_idx, c
-

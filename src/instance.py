@@ -130,6 +130,7 @@ class Instance:
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.touch()
+        return path
 
     def config_json(self):
         return JsonLoader(self.DIR / "src" / "setting" / "user.json")
@@ -138,12 +139,14 @@ class Instance:
         self.Config = Config(user_path)
         return self.Config
 
-    def csv(self, *args) -> CsvLoader:
+    def csv_tradings(self, *args) -> CsvLoader:
         path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)
+        self.Path_exist(path)
         return CsvLoader(path)
 
     def json(self, *args):
         path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)
+        self.Path_exist(path)
         return JsonLoader(path)
 
     def web(self, url: str) -> WebLoader:
