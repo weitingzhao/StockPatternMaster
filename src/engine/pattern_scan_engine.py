@@ -49,17 +49,22 @@ class PatternScanEngine:
             bars_left: int = 6,
             bars_right: int = 6
     ) -> List[dict]:
+
         patterns: List[dict] = []
+        # Load symbol (default loader is csv trading_data_loader)
         df = loader.get(symbol)
+
         if df is None or df.empty:
             return patterns
 
         if df.index.has_duplicates:
             df = df[~df.index.duplicated()]
+
         pivots = self.PatternDetector.get_max_min(
             df=df,
             bars_left=bars_left,
             bars_right=bars_right)
+
         if not pivots.shape[0]:
             return patterns
 

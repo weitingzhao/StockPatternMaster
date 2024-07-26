@@ -120,7 +120,8 @@ class TreadingDataLoader(AbstractLoader):
         assert isinstance(df, pd.DataFrame)
         return df
 
-    def last_day_week(self, date: datetime) -> datetime:
+    @staticmethod
+    def last_day_week(date: datetime) -> datetime:
         """Given a date returns the date for Saturday"""
         weekday = date.weekday()
         if weekday == 5:
@@ -132,7 +133,8 @@ class TreadingDataLoader(AbstractLoader):
             remaining_days += 7
         return date + timedelta(remaining_days)
 
-    def last_day_month(self, date: datetime) -> datetime:
+    @staticmethod
+    def last_day_month(date: datetime) -> datetime:
         """Given a date returns the date for last day of month"""
         month = date.month % 12 + 1
         year = date.year + (1 if month == 1 else 0)

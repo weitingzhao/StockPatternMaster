@@ -41,11 +41,14 @@ class CsvLoader:
             end_date = end_date.replace(tzinfo=timezone(timedelta(days=-1, seconds=72000)))
 
         if size <= chunk_size and not end_date:
-            df = pd.read_csv(self.Path, index_col="Date", dtype={"Date": object})
-            df["Date"] = pd.to_datetime(df["Date"], utc=True)
-            df.set_index(keys="Date", inplace=True)
-            return df.iloc[-period:]
-
+            try:
+                df = pd.read_csv(self.Path, index_col="Date", dtype={"Date": object})
+                df.index = pd.to_datetime(df.index, utc=True)
+                df.set_index(df.index, inplace=True)
+                return df.iloc[-period:]
+            except Exception as e:
+                print(f"Error: {e}")
+                return None
 
         chunks_read = []  # store the bytes chunk in a list
         start_date = None

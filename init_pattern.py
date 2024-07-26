@@ -1,3 +1,4 @@
+import csv
 import sys
 import json
 import concurrent
@@ -8,7 +9,6 @@ from src.instance import Instance
 from argparse import ArgumentParser
 from src.engine.engine import Engine
 from concurrent.futures import Future
-
 
 # Instance
 instance = Instance(__name__)
@@ -34,14 +34,20 @@ parser.add_argument("-r", "--right", type=int, metavar="int", default=6,
 parser.add_argument("--save", type=Path, nargs="?", const=instance.DIR / "images",
                     help="Specify the save directory")
 parser.add_argument("--idx", type=int, default=0, help="Index to plot")
+parser.add_argument("-v", "--version", action="store_true", help="Print the current version.")
+
 # Parser Group
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-f", "--file", type=lambda x: Path(x).expanduser().resolve(),
                    default=None, metavar="filepath", help="File containing list of stocks. One on each line")
-group.add_argument("--sym", nargs="+", metavar="SYM", help="Space separated list of stock symbols.")
-group.add_argument("-v", "--version", action="store_true", help="Print the current version.")
 group.add_argument("--plot", type=lambda x: Path(x).expanduser().resolve(),
                    default=None, help="Plot results from json file")
+group.add_argument("-my", "--mylist", nargs="+", metavar="SYM",
+                   help="Space separated list of stock symbols.")
+group.add_argument("-sec", "--sector", type=str, nargs='+',
+                   help="Fetch trading history for symbols in the specified sectors.")
+group.add_argument("-ind", "--industry", type=str, nargs='+',
+                   help="Fetch trading history for symbols in the specified industries.")
 # check "config"
 if "-c" in sys.argv or "--config" in sys.argv:
     idx = sys.argv.index("-c" if "-c" in sys.argv else "--config")
@@ -67,17 +73,6 @@ else:
 # check "Data Path"
 if config["DATA_PATH"] == "" or not data_path.exists():
     exit("`DATA_PATH` not found or not provided. Edit user.json.")
-# check "Symbol List"
-sym_list = config["SYM_LIST"] if "SYM_LIST" in config else None
-if sym_list is not None and not (
-        "-f" in sys.argv
-        or "--file" in sys.argv
-        or "--sym" in sys.argv
-        or "-v" in sys.argv
-        or "--version" in sys.argv
-        or "--plot" in sys.argv
-):
-    sys.argv.extend(("-f", sym_list))
 
 # get "args"
 args = parser.parse_args()
@@ -87,7 +82,7 @@ if args.version:
     exit(
         f"""
     Stock-Pattern Master | Version {instance.Config.VERSION}
-    Copyright (C) 2024 Vision Zhao 
+    Copyright (C) 2024 Vision Zhao
 
     Github: https://github.com/weitingzhao/StockPatternMaster
 
@@ -97,6 +92,7 @@ if args.version:
     See license: https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
     """
     )
+
 
 # # Load data loader from config. Default loader is EODFileLoader
 # loader_name = config.get("LOADER", "treading_data_loader:TreadingDataLoader")
@@ -139,8 +135,19 @@ def get_user_input() -> str:
     if not (user_input.isdigit() and int(user_input) in range(10)):
         print("Enter a key from the list")
         return get_user_input()
-
     return user_input
+
+def load_symbols(file_name: str, arg_param: List[str]):
+    with (instance.FOLDER_Watch / f"{file_name}.json").open("r", encoding="utf-8") as file:
+        data = json.load(file)
+        if "all" in arg_param:
+            for x,symbols in data['detail'].items():
+                symbol_list.extend(symbols)
+        else:
+            for category in arg_param:
+                symbol_list.extend(data['detail'].get(category, []))
+    instance.logger.info(f"Fetching symbols by {file_name}: {args.sector}")
+
 
 # -p --pattern
 if args.pattern:
@@ -157,11 +164,35 @@ else:
 # Initialize Scaner
 scaner = _.Pattern_Scan(args)
 instance.logger.info(f"Scanning `{key.upper()}` patterns on `{scaner.loader.timeframe}`. Press Ctrl - C to exit")
+
 # Prepare symbol list and futures result
-symbol_list = args.file.read_text().strip().split("\n")[1:] if args.file else args.sym
-instance.logger.info(f"Symbols: {','.join(symbol_list)}")
-futures: List[concurrent.futures.Future] = []
+symbol_list = []
+# Level 2. Main daily step, based on symbols pull daily trading history data.
+if args.file:
+    symbol_list = args.file.read_text().strip().split("\n")[1:]
+if args.mylist:
+    with (instance.FOLDER_Watch / "mylist.csv").open("r", encoding="utf-8") as file:
+        reader = csv.reader(file)
+        next(reader)
+        symbol_list = [row[0] for row in reader]
+if args.sector:
+    load_symbols("symbols_sector", args.sector)
+if args.industry:
+    load_symbols("symbols_industry", args.industry)
+
+# check "Symbol List"
+sym_list = config["SYM_LIST"] if "SYM_LIST" in config else None
+if sym_list is not None and not (
+        "-f" in sys.argv
+        or "--file" in sys.argv
+        or "--sym" in sys.argv
+        or "-v" in sys.argv
+        or "--version" in sys.argv
+        or "--plot" in sys.argv
+):
+    sys.argv.extend(("-f", sym_list))
+
 # Process by pattern
+futures: List[concurrent.futures.Future] = []
 patterns = scaner.process_by_pattern_name(symbol_list, key, futures)
 print(f"patterns:{patterns}")
-

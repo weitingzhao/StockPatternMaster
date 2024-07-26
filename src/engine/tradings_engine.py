@@ -61,7 +61,7 @@ class TradingsEngine:
                     ticker = tickers.tickers[ticker_symbol]
                     # Save the history to a csv file
                     history = ticker.history(period=period)
-                    self._.csv_tradings("tradings", f"{ticker_symbol}.csv").save_df(history)
+                    self._.csv_tradings("daily", f"{ticker_symbol}.csv").save_df(history)
                 except Exception as e:
                     self._.logger.error(f"Error: fetch {ticker_symbol} trading history - got Error:{e}")
 

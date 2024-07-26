@@ -36,7 +36,7 @@ class Instance:
         self.FOLDER_Logs = self.Path_exist(self.DIR / "logs")
         self.FOLDER_Symbols = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "symbols")
         self.FOLDER_Daily = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
-        self.FOLDER_Tradings = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "tradings")
+        self.FOLDER_Tradings = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
         self.FOLDER_Infos = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "infos")
 
         self.FILE_Meta = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "meta.json")

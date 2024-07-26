@@ -5,6 +5,8 @@ from typing import Optional, Dict, Union, Callable, Tuple
 
 def get_pattern_list() -> list:
     return list(get_pattern_dict().keys())
+
+
 def get_pattern_dict() -> Dict[str, Union[str, Callable]]:
     return {
         "all": "all",
@@ -198,12 +200,9 @@ def find_double_bottom(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: p
 
 def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Head and Shoulders - Bullish
-
     Returns None if no patterns found.
-
     Else returns an Tuple of dicts containing plot arguments and pattern data.
     """
-
     assert isinstance(pivots.index, pd.DatetimeIndex)
 
     pivot_len = pivots.shape[0]
@@ -212,15 +211,12 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 
     c_idx = pivots["P"].idxmin()
     c = pivots.at[c_idx, "P"]
-
     assert isinstance(c_idx, pd.Timestamp)
 
     while True:
         pos = _.get_prev_index(pivots.index, c_idx)
-
         if pos >= pivot_len:
             break
-
         idx_before_c = pivots.index[pos]
 
         a_idx = pivots.loc[:idx_before_c, "P"].idxmin()
@@ -229,7 +225,6 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
         b = pivots.at[b_idx, "P"]
 
         pos = _.get_next_index(pivots.index, c_idx)
-
         if pos >= pivot_len:
             break
 
@@ -360,13 +355,10 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
         if pivots.index.has_duplicates:
             if isinstance(a, (pd.Series, str)):
                 a = pivots.at[a_idx, "P"].iloc[1]
-
             if isinstance(b, (pd.Series, str)):
                 b = pivots.at[b_idx, "P"].iloc[0]
-
             if isinstance(c, (pd.Series, str)):
                 c = pivots.at[c_idx, "P"].iloc[1]
-
             if isinstance(d, (pd.Series, str)):
                 d = pivots.at[d_idx, "P"].iloc[0]
 
@@ -378,11 +370,10 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                 # check that the pattern is well formed
                 if pivots.index[-1] == d_idx or pivots.index[-1] == c_idx:
                     break
-
                 a_idx, a = c_idx, c
                 continue
 
-            entryLine = ((c_idx, c), (e_idx, c))
+            entry_line = ((c_idx, c), (e_idx, c))
             ab = ((a_idx, a), (b_idx, b))
             bc = ((b_idx, b), (c_idx, c))
             cd = ((c_idx, c), (d_idx, d))
@@ -397,10 +388,10 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                 end=e_idx,
                 df_start=df.index[0],
                 df_end=df.index[-1],
-                lines=(entryLine, ab, bc, cd, de),
+                lines=(entry_line, ab, bc, cd, de),
             )
 
-        # We assign pivot level C to be the new A
+        # We assign pivot level C to be the new
         # This may not be the lowest pivot, so additional checks are required.
         a_idx, a = c_idx, c
 
@@ -413,24 +404,24 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
     assert isinstance(pivots.index, pd.DatetimeIndex)
 
     pivot_len = pivots.shape[0]
+    # a
     a_idx = pivots["P"].idxmax()
-    a, aVol = pivots.loc[a_idx, ["P", "V"]]
+    a, a_vol = pivots.loc[a_idx, ["P", "V"]]
+    # d
     d_idx = df.index[-1]
     d = df.at[d_idx, "Close"]
 
     atr_ser = _.get_atr(df.High, df.Low, df.Close)
-
     assert isinstance(a_idx, pd.Timestamp)
 
     while True:
         idx = _.get_next_index(pivots.index, a_idx)
-
         if idx >= pivot_len:
             break
-
+        # c
         c_idx = pivots.loc[pivots.index[idx]:, "P"].idxmax()
-        c, cVol = pivots.loc[c_idx, ["P", "V"]]
-
+        c, c_vol = pivots.loc[c_idx, ["P", "V"]]
+        # b
         b_idx = pivots.loc[a_idx:c_idx, "P"].idxmin()
         b = pivots.at[b_idx, "P"]
 
@@ -439,29 +430,24 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
         if pivots.index.has_duplicates:
             if isinstance(a, (pd.Series, str)):
                 a = pivots.at[a_idx, "P"].iloc[0]
-
-            if isinstance(aVol, (pd.Series, str)):
-                aVol = pivots.at[a_idx, "V"].iloc[0]
-
+            if isinstance(a_vol, (pd.Series, str)):
+                a_vol = pivots.at[a_idx, "V"].iloc[0]
             if isinstance(b, (pd.Series, str)):
                 b = pivots.at[b_idx, "P"].iloc[1]
-
             if isinstance(c, (pd.Series, str)):
                 c = pivots.at[c_idx, "P"].iloc[0]
-
-            if isinstance(cVol, (pd.Series, str)):
-                cVol = pivots.at[c_idx, "V"].iloc[0]
+            if isinstance(c_vol, (pd.Series, str)):
+                c_vol = pivots.at[c_idx, "V"].iloc[0]
 
         df_slice = df.loc[a_idx:c_idx]
-        avgBarLength = (df_slice["High"] - df_slice["Low"]).mean()
-
-        if _.is_double_top(a, b, c, d, aVol, cVol, avgBarLength, atr):
+        avg_bar_length = (df_slice["High"] - df_slice["Low"]).mean()
+        if _.is_double_top(a, b, c, d, a_vol, c_vol, avg_bar_length, atr):
             if (
                     a == df.at[a_idx, "Low"]
                     or b == df.at[b_idx, "High"]
                     or c == df.at[c_idx, "Low"]
             ):
-                a_idx, a, aVol = c_idx, c, cVol
+                a_idx, a, a_vol = c_idx, c, c_vol
                 continue
 
             # check if Level C has been breached after it was formed
@@ -470,16 +456,15 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
                     or b_idx != df.loc[b_idx:, "Close"].idxmin()
             ):
                 # Level C is breached, current pattern is not valid
-                a_idx, a, aVol = c_idx, c, cVol
+                a_idx, a, a_vol = c_idx, c, c_vol
                 continue
 
-            entryLine = ((b_idx, b), (d_idx, b))
+            entry_line = ((b_idx, b), (d_idx, b))
             ab = ((a_idx, a), (b_idx, b))
             bc = ((b_idx, b), (c_idx, c))
             cd = ((c_idx, c), (d_idx, d))
 
             _.logger.debug(f"{sym} - DTOP")
-
             return dict(
                 sym=sym,
                 pattern="DTOP",
@@ -487,10 +472,9 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
                 end=d_idx,
                 df_start=df.index[0],
                 df_end=df.index[-1],
-                lines=(entryLine, ab, bc, cd),
+                lines=(entry_line, ab, bc, cd),
             )
-
-        a_idx, a, aVol = c_idx, c, cVol
+        a_idx, a, a_vol = c_idx, c, c_vol
 
 
 def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
@@ -498,7 +482,6 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
     Returns None if no patterns found.
     Else returns a Tuple of dicts containing plot arguments and pattern data.
     """
-
     assert isinstance(pivots.index, pd.DatetimeIndex)
     pivot_len = pivots.shape[0]
     # f
@@ -653,39 +636,29 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
 
         d_idx = pivots.loc[pivots.index[pos_after_b]:, "P"].idxmin()
         d = pivots.at[d_idx, "P"]
-
         c_idx = pivots.loc[pivots.index[pos_after_a]:, "P"].idxmax()
         c = pivots.at[c_idx, "P"]
-
         pos_after_c = _.get_next_index(pivots.index, c_idx)
-
         if pos_after_c >= pivot_len:
             break
 
         e_idx = pivots.loc[pivots.index[pos_after_c]:, "P"].idxmax()
         e = pivots.at[e_idx, "P"]
-
         if pivots.index.has_duplicates:
             if isinstance(a, (pd.Series, str)):
                 a = pivots.at[a_idx, "P"].iloc[0]
-
             if isinstance(b, (pd.Series, str)):
                 b = pivots.at[b_idx, "P"].iloc[1]
-
             if isinstance(c, (pd.Series, str)):
                 c = pivots.at[c_idx, "P"].iloc[0]
-
             if isinstance(d, (pd.Series, str)):
                 d = pivots.at[d_idx, "P"].iloc[1]
-
             if isinstance(e, (pd.Series, str)):
                 e = pivots.at[e_idx, "P"].iloc[0]
 
         df_slice = df.loc[a_idx:d_idx]
-        avgBarLength = (df_slice["High"] - df_slice["Low"]).mean()
-
-        triangle = _.is_triangle(a, b, c, d, e, f, avgBarLength)
-
+        avg_bar_length = (df_slice["High"] - df_slice["Low"]).mean()
+        triangle = _.is_triangle(a, b, c, d, e, f, avg_bar_length)
         if triangle is not None:
             # check if high of C or low of D has been breached
             # Check if A is indeed the pivot high
@@ -699,7 +672,6 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
 
             upper = _.generate_trend_line(df.High, a_idx, c_idx)
             lower = _.generate_trend_line(df.Low, b_idx, d_idx)
-
             # If trendlines have intersected, pattern has played out
             if upper.line.end.y < lower.line.end.y:
                 break
@@ -708,19 +680,16 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
                     upper.slope > 0.1 and lower.slope < 0.2
             ):
                 break
-
             if triangle == "Descending" and (
                     lower.slope < -0.1 and upper.slope > -0.2
             ):
                 break
-
             if triangle == "Symmetric" and (
                     upper.slope > -0.2 and lower.slope < 0.2
             ):
                 break
 
             _.logger.debug(f"{sym} - {triangle}")
-
             return dict(
                 sym=sym,
                 pattern=triangle,
@@ -732,5 +701,4 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
                 slope_lower=lower.slope,
                 lines=(upper.line, lower.line),
             )
-
         a_idx, c = c_idx, c
