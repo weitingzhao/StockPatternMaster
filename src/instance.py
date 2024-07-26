@@ -36,8 +36,8 @@ class Instance:
         self.FOLDER_Logs = self.Path_exist(self.DIR / "logs")
         self.FOLDER_Symbols = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "symbols")
         self.FOLDER_Daily = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
-        self.FOLDER_Amibroker = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "amibroker")
         self.FOLDER_Tradings = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "tradings")
+        self.FOLDER_Infos = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "infos")
 
         self.FILE_Meta = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "meta.json")
         self.FILE_Isin = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "isin.csv")
@@ -144,8 +144,14 @@ class Instance:
         self.Path_exist(path)
         return CsvLoader(path)
 
+    def json_Data(self, *args):
+        return self.json(self.Config.FOLDER_Data, *args)
+
+    def json_Research(self, *args):
+        return self.json(self.Config.FOLDER_Research, *args)
+
     def json(self, *args):
-        path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)
+        path = self.DIR.joinpath(*args)
         self.Path_exist(path)
         return JsonLoader(path)
 
