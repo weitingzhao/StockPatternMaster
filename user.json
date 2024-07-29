@@ -1,9 +1,11 @@
 {
-   "DATA_PATH": "~/Desktop/Stock/StockPatternMaster/data/daily",
-   "SYM_LIST": "~/Desktop/Stock/StockPatternMaster/research/watch/mylist.csv",
-   "LOADER": "treading_data_loader:TreadingDataLoader",
    "DEFAULT_TF": "daily",
-   "SAVE_FOLDER": "/home/vision/Desktop/Stock/StockPatternMaster/research/patterns",
+   "LOADER": "treading_data_loader:TreadingDataLoader",
+   "DATA_ROOT": "/home/vision/Desktop/Stock_Data",
+   "DATA_PATH": "/home/vision/Desktop/Stock_Data/data/daily",
+   "SYM_LIST": "/home/vision/Desktop/Stock_Data/research/watch/mylist.csv",
+   "SAVE_FOLDER": "/home/vision/Desktop/Stock_Data/research/patterns",
+   "SAVE_STATE": "/home/vision/Desktop/Stock_Data/research/patterns/state",
    "PLOT_PLUGINS": {
       "RSI": {
          "name": "rsi",

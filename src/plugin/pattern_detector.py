@@ -248,6 +248,7 @@ class PatternDetector:
                 and e > c
         )
 
+
     def generate_trend_line(self, series: pd.Series, date1: pd.Timestamp, date2: pd.Timestamp) -> Line:
         """Return the end coordinates for a trend-line along with slope and y-intercept
         Input: Pandas series with a pandas.DatetimeIndex, and two dates:

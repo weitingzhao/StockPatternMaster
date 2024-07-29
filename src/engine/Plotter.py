@@ -70,7 +70,8 @@ class Plotter:
         else:
             colors = ("green",) + ("midnightblue",) * (len(lines) - 1)
 
-        save_path = self.save_folder / f"{sym}_{pattern}_{self.timeframe}.png"
+        (self.save_folder / f"{pattern}").mkdir(parents=True, exist_ok=True)
+        save_path = self.save_folder / f"{pattern}" / f"{sym}_{pattern}_{self.timeframe}.png"
 
         self.plot_args.update(
             dict(

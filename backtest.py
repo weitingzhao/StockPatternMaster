@@ -42,7 +42,7 @@ parser.add_argument("-l", "--left", type=int, metavar="int", default=6,
                     help="Number of candles on left side of pivot")
 parser.add_argument("-r", "--right", type=int, metavar="int", default=6,
                     help="Number of candles on right side of pivot")
-parser.add_argument("--save", type=Path, nargs="?", const=instance.DIR / "images",
+parser.add_argument("--save", type=Path, nargs="?", const=instance.FOLDER_Images,
                     help="Specify the save directory")
 parser.add_argument("--idx", type=int, default=0, help="Index to plot")
 # Group

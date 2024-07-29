@@ -39,6 +39,7 @@ class Config:
     PRESET = {}
     WATCH = {"SECTORS": "sectors.csv"}
 
+    FOLDER_Log = "log"
     FOLDER_Data = "data"
     FOLDER_Research = "research"
 

@@ -49,8 +49,9 @@ class PatternScanEngine:
             bars_left: int = 6,
             bars_right: int = 6
     ) -> List[dict]:
-
+        # initialize result: patterns
         patterns: List[dict] = []
+
         # Load symbol (default loader is csv trading_data_loader)
         df = loader.get(symbol)
 
@@ -59,7 +60,7 @@ class PatternScanEngine:
 
         if df.index.has_duplicates:
             df = df[~df.index.duplicated()]
-
+        # get feature points
         pivots = self.PatternDetector.get_max_min(
             df=df,
             bars_left=bars_left,
@@ -68,6 +69,7 @@ class PatternScanEngine:
         if not pivots.shape[0]:
             return patterns
 
+        # main loop to scan for patterns
         for function in functions:
             if not callable(function):
                 raise TypeError(f"Expected callable. Got {type(function)}")
@@ -76,6 +78,7 @@ class PatternScanEngine:
             except Exception as e:
                 self.instance.logger.exception(f"SYMBOL name: {symbol}", exc_info=e)
                 return patterns
+            # add detected pattern into result
             if result:
                 patterns.append(self.PatternDetector.make_serializable(result))
 
@@ -94,7 +97,7 @@ class PatternScanEngine:
         filtered = None
 
         if self.instance.Config.__dict__.get("SAVE_STATE", False) and self.args.file and not self.args.date:
-            state_file = self.instance.DIR / f"state/{self.args.file.stem}_{self.args.pattern}.json"
+            state_file = self.instance.FOLDER_States / f"{self.args.file.stem}_{self.args.pattern}.json"
             if not state_file.parent.is_dir():
                 state_file.parent.mkdir(parents=True)
             state = json.loads(state_file.read_bytes()) if state_file.exists() else {}
@@ -111,7 +114,7 @@ class PatternScanEngine:
 
         # begin a scan process
         with concurrent.futures.ProcessPoolExecutor() as executor:
-
+            # load concurrent task
             for sym in symbol_list:
                 future = executor.submit(
                     self.scan_pattern,
@@ -130,7 +133,7 @@ class PatternScanEngine:
                     result = future.result()
                 except Exception as e:
                     self.cleanup(self.loader, futures)
-                    self.instance.logger.exception("Error in Future - scaning patterns", exc_info=e)
+                    self.instance.logger.exception("Error in Future - scanning patterns", exc_info=e)
                     return []
                 patterns.extend(result)
             futures.clear()

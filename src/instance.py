@@ -28,25 +28,32 @@ class Instance:
     def __init__(self, name: str = __name__, config_path: Path = None):
         # Set the basic parameters
         self.__name__ = name
-        self.DIR = Path(__file__).parents[1]
-        self.Config: Config = Config(self.DIR / "user.json" if config_path is None else config_path)
+        source_dir = Path(__file__).parents[1]
+        self.File_User = Path(source_dir / "user.json")
+        self.Config: Config = Config(self.File_User if config_path is None else config_path)
+        self.ROOT = self.Path_exist(Path(self.Config.__dict__.get("DATA_ROOT", source_dir / "data")))
 
         # <editor-fold desc="Declare file & folder">
-        # data
-        self.FOLDER_Logs = self.Path_exist(self.DIR / "logs")
-        self.FOLDER_Symbols = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "symbols")
-        self.FOLDER_Daily = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
-        self.FOLDER_Tradings = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "daily")
-        self.FOLDER_Infos = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "infos")
+        # data structure
+        self.ROOT_Logs      = self.Path_exist(self.ROOT / self.Config.FOLDER_Log)
+        self.ROOT_Data      = self.Path_exist(self.ROOT / self.Config.FOLDER_Data)
+        self.ROOT_Research  = self.Path_exist(self.ROOT / self.Config.FOLDER_Research)
 
-        self.FILE_Meta = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "meta.json")
-        self.FILE_Isin = self.Path_exist(self.DIR / self.Config.FOLDER_Data / "isin.csv")
+        # data sub-folder
+        self.FOLDER_Symbols = self.Path_exist(self.ROOT_Data / "symbols")
+        self.FOLDER_Daily   = self.Path_exist(self.ROOT_Data / "daily")
+        self.FOLDER_Tradings= self.Path_exist(self.ROOT_Data / "daily")
+        self.FOLDER_Infos   = self.Path_exist(self.ROOT_Data / "infos")
 
-        # research
-        self.FOLDER_Watch = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "watch")
-        self.FOLDER_Charts = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "charts")
-        self.FOLDER_Lines = self.Path_exist(self.DIR / self.Config.FOLDER_Research / "lines")
+        # research sub-folder
+        self.FOLDER_Watch   = self.Path_exist(self.ROOT_Research / "watch")
+        self.FOLDER_Charts  = self.Path_exist(self.ROOT_Research / "charts")
+        self.FOLDER_Lines   = self.Path_exist(self.ROOT_Research / "lines")
+        self.FOLDER_Images = self.Path_exist(self.ROOT_Research / "images")
+        self.FOLDER_States = self.Path_exist(self.ROOT_Research / "states")
 
+        # Files
+        self.FILE_Infos_Errors = self.Path_exist(self.FOLDER_Infos / "errors.json")
         self.FILE_WatchList = self.Path_exist(Path(self.Config.__dict__["SYM_LIST"]))
         # </editor-fold>
 
@@ -74,12 +81,6 @@ class Instance:
         # </editor-fold>
 
         # <editor-fold desc="Initial Data">
-        # Init Meta
-        self.META: Dict = json.loads(self.FILE_Meta.read_bytes())
-        # Init ISIN
-        self.ISIN = pd.read_csv(self.FILE_Isin, index_col="ISIN")
-        # initiate the dates
-        self.DATES = Dates(self.logger, self.tz_US, self.tz_local, self.META["lastUpdate"])
         # PLOT Plugins
         self.PLOT_PLUGINS = {}
         # MyList
@@ -108,7 +109,7 @@ class Instance:
         stdout_handler.setLevel(logging.INFO)
         stdout_handler.setFormatter(logging.Formatter('[%(asctime)s - %(name)s] %(levelname)s: %(message)s'))
 
-        file_handler = logging.FileHandler(self.FOLDER_Logs / "error.log")
+        file_handler = logging.FileHandler(self.ROOT_Logs / "error.log")
         file_handler.setLevel(logging.WARNING)
         file_handler.setFormatter(
             logging.Formatter('[%(asctime)s - %(name)s] %(levelname)s: %(message)s')
@@ -133,25 +134,25 @@ class Instance:
         return path
 
     def config_json(self):
-        return JsonLoader(self.DIR / "src" / "setting" / "user.json")
+        return JsonLoader(self.File_User)
 
     def config_new(self, user_path: Path):
         self.Config = Config(user_path)
         return self.Config
 
     def csv_tradings(self, *args) -> CsvLoader:
-        path = (self.DIR / self.Config.FOLDER_Data).joinpath(*args)
+        path = self.ROOT_Data.joinpath(*args)
         self.Path_exist(path)
         return CsvLoader(path)
 
     def json_Data(self, *args):
-        return self.json(self.Config.FOLDER_Data, *args)
+        return self.json(root=self.ROOT_Data, *args)
 
     def json_Research(self, *args):
-        return self.json(self.Config.FOLDER_Research, *args)
+        return self.json(root=self.ROOT_Research, *args)
 
-    def json(self, *args):
-        path = self.DIR.joinpath(*args)
+    def json(self, root:Path, *args):
+        path = root.joinpath(*args)
         self.Path_exist(path)
         return JsonLoader(path)
 

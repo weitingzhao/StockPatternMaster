@@ -103,7 +103,7 @@ class TradingsEngine:
         symbols_str = " ".join(symbols)
         tickers = yf.Tickers(symbols_str)
 
-        error_path = self._.Path_exist(self._.DIR / self._.Config.FOLDER_Data / "infos" / "errors.json")
+        error_path = self._.Path_exist(self._.FILE_Infos_Errors)
         if error_path.exists():
             with open(error_path.resolve(), "w"):
                 pass

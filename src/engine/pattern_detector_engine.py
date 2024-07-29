@@ -47,7 +47,8 @@ def find_bullish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
     pivot_len = pivots.shape[0]
-    # a
+    # P = Price V = Volume
+    # a 1st high position, also Max high point in history
     a_idx = pivots["P"].idxmax()
     a = pivots.at[a_idx, "P"]
     # e
@@ -59,16 +60,16 @@ def find_bullish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
         pos_after_a = _.get_next_index(pivots.index, a_idx)
         if pos_after_a >= pivot_len:
             break
-        # b
+        # b 1st low position
         b_idx = pivots.loc[pivots.index[pos_after_a]:, "P"].idxmin()
         b = pivots.at[b_idx, "P"]
         pos_after_b = _.get_next_index(pivots.index, b_idx)
         if pos_after_b >= pivot_len:
             break
-        # d
+        # d 2nd low position
         d_idx = pivots.loc[pivots.index[pos_after_b]:, "P"].idxmin()
         d = pivots.at[d_idx, "P"]
-        # c
+        # c 2nd high position
         c_idx = pivots.loc[b_idx:d_idx, "P"].idxmax()
         c = pivots.at[c_idx, "P"]
 
