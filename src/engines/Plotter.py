@@ -2,7 +2,7 @@ from typing import Literal, Optional
 from pathlib import Path
 import matplotlib.pyplot as plt
 import mplfinance as mpf
-from src.engines.loaders.abstract_loader import AbstractLoader
+import src.engines.loaders as loader
 
 
 class Plotter:
@@ -13,7 +13,7 @@ class Plotter:
     def __init__(
         self,
         data,
-        loader: AbstractLoader,
+        loader: loader.AbstractLoader,
         save_folder: Optional[Path] = None,
         mode: Literal["default", "expand"] = "default",
     ):

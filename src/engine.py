@@ -1,9 +1,7 @@
 from pathlib import Path
-from src.instance import Instance
 import src.engines as engine
-from src.engines.loaders.csv_loader import CsvLoader
-from src.engines.loaders.web_loader import WebLoader
-from src.engines.loaders.json_loader import JsonLoader
+from src.instance import Instance
+import src.engines.loaders as loader
 
 
 class Engine:
@@ -33,13 +31,17 @@ class Engine:
         return engine.PatternScan(self.Instance, args)
 
     def config_json(self):
-        return JsonLoader(self.Instance.Config.FILE_user)
+        return loader.JsonLoader(self.Instance.Config.FILE_user)
 
-    def csv_tradings(self, *args) -> CsvLoader:
+    #<editor-fold desc="Csv">
+    def csv_tradings(self, *args) -> loader.CsvLoader:
         path = self.Instance.ROOT_Data.joinpath(*args)
         self.Instance.Path_exist(path)
-        return CsvLoader(path)
+        return loader.CsvLoader(path)
 
+    #</editor-fold>
+
+    #<editor-fold desc="Json">
     def json_Data(self, *args):
         return self.json(root=self.Instance.ROOT_Data, *args)
 
@@ -49,7 +51,11 @@ class Engine:
     def json(self, root: Path, *args):
         path = root.joinpath(*args)
         self.Instance.Path_exist(path)
-        return JsonLoader(path)
+        return loader.JsonLoader(path)
 
-    def web(self, url: str) -> WebLoader:
-        return WebLoader(self.Instance.logger, url)
+    #</editor-fold>
+
+    #<editor-fold desc="Web">
+    def web(self, url: str) -> loader.WebLoader:
+        return loader.WebLoader(self.Instance.logger, url)
+    #</editor-fold>

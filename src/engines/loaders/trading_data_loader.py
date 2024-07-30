@@ -1,15 +1,14 @@
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
-from .abstract_loader import AbstractLoader
-from .csv_loader import CsvLoader
+import src.engines.loaders as loader
 import pandas as pd
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class TreadingDataLoader(AbstractLoader):
+class TradingDataLoader(loader.AbstractLoader):
     """
     A class to load Daily or higher timeframe data from CSV files.
 
@@ -90,7 +89,7 @@ class TreadingDataLoader(AbstractLoader):
             return self.process_monthly(file, self.end_date)
 
         try:
-            csv_loader = CsvLoader(file)
+            csv_loader = loader.CsvLoader(file)
             df = csv_loader.load(
                 period=self.period,
                 end_date=self.end_date,

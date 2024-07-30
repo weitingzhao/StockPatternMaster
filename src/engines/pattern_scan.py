@@ -12,8 +12,7 @@ from concurrent.futures import Future
 import src.engines.pattern_detector as pattern_detector_engine
 from typing import Tuple, Callable, List, Optional
 from src.engines.plugin.pattern import PatternDetector
-from src.engines.loaders.abstract_loader import AbstractLoader
-
+import src.engines.loaders as loader
 
 class PatternScanEngine:
 
@@ -32,7 +31,7 @@ class PatternScanEngine:
             tf=args.tf,
             end_date=args.date)
 
-    def cleanup(self, loader: AbstractLoader, futures: List[concurrent.futures.Future]):
+    def cleanup(self, loader: loader.AbstractLoader, futures: List[concurrent.futures.Future]):
         if futures:
             for future in futures:
                 future.cancel()
@@ -44,7 +43,7 @@ class PatternScanEngine:
             self,
             symbol: str,
             functions: Tuple[Callable, ...],
-            loader: AbstractLoader,
+            loader: loader.AbstractLoader,
             bars_left: int = 6,
             bars_right: int = 6
     ) -> List[dict]:
