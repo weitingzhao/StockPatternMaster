@@ -1,5 +1,5 @@
 import pandas as pd
-from src.plugin.pattern_detector import PatternDetector
+from src.engines.plugin.pattern import PatternDetector
 from typing import Optional, Dict, Union, Callable, Tuple
 
 

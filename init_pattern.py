@@ -5,15 +5,12 @@ import concurrent
 from typing import List
 from pathlib import Path
 from datetime import datetime
-from src.instance import Instance
 from argparse import ArgumentParser
-from src.engine.engine import Engine
+import src as _
 from concurrent.futures import Future
 
 # Instance
-instance = Instance(__name__)
-_ = Engine(instance)
-key_list = _.Pattern_List()
+key_list = _.engine.Pattern_List()
 
 # Parse CLI arguments
 parser = ArgumentParser(
@@ -31,7 +28,7 @@ parser.add_argument("-l", "--left", type=int, metavar="int", default=6,
                     help="Number of candles on left side of pivot")
 parser.add_argument("-r", "--right", type=int, metavar="int", default=6,
                     help="Number of candles on right side of pivot")
-parser.add_argument("--save", type=Path, nargs="?", const=instance.FOLDER_Images,
+parser.add_argument("--save", type=Path, nargs="?", const=_.instance.FOLDER_Images,
                     help="Specify the save directory")
 parser.add_argument("--idx", type=int, default=0, help="Index to plot")
 parser.add_argument("-v", "--version", action="store_true", help="Print the current version.")
@@ -53,7 +50,7 @@ if "-c" in sys.argv or "--config" in sys.argv:
     idx = sys.argv.index("-c" if "-c" in sys.argv else "--config")
     CONFIG_PATH = Path(sys.argv[idx + 1]).expanduser().resolve()
 else:
-    CONFIG_PATH = instance.Config.user_config
+    CONFIG_PATH = _.instance.Config.FILE_user
 
 if CONFIG_PATH.exists():
     config = json.loads(CONFIG_PATH.read_bytes())
@@ -81,7 +78,7 @@ args = parser.parse_args()
 if args.version:
     exit(
         f"""
-    Stock-Pattern Master | Version {instance.Config.VERSION}
+    Stock-Pattern Master | Version {_.instance.Config.VERSION}
     Copyright (C) 2024 Vision Zhao
 
     Github: https://github.com/weitingzhao/StockPatternMaster
@@ -138,7 +135,7 @@ def get_user_input() -> str:
     return user_input
 
 def load_symbols(file_name: str, arg_param: List[str]):
-    with (instance.FOLDER_Watch / f"{file_name}.json").open("r", encoding="utf-8") as file:
+    with (_.instance.FOLDER_Watch / f"{file_name}.json").open("r", encoding="utf-8") as file:
         data = json.load(file)
         if "all" in arg_param:
             for x,symbols in data['detail'].items():
@@ -146,7 +143,7 @@ def load_symbols(file_name: str, arg_param: List[str]):
         else:
             for category in arg_param:
                 symbol_list.extend(data['detail'].get(category, []))
-    instance.logger.info(f"Fetching symbols by {file_name}: {args.sector}")
+    _.instance.logger.info(f"Fetching symbols by {file_name}: {args.sector}")
 
 
 # -p --pattern
@@ -162,8 +159,8 @@ else:
 
 ##--------------------------##
 # Initialize Scaner
-scaner = _.Pattern_Scan(args)
-instance.logger.info(f"Scanning `{key.upper()}` patterns on `{scaner.loader.timeframe}`. Press Ctrl - C to exit")
+scaner = _.engine.Pattern_Scan(args)
+_.logger.info(f"Scanning `{key.upper()}` patterns on `{scaner.loader.timeframe}`. Press Ctrl - C to exit")
 
 # Prepare symbol list and futures result
 symbol_list = []
@@ -171,7 +168,7 @@ symbol_list = []
 if args.file:
     symbol_list = args.file.read_text().strip().split("\n")[1:]
 if args.mylist:
-    with (instance.FOLDER_Watch / "mylist.csv").open("r", encoding="utf-8") as file:
+    with (_.instance.FOLDER_Watch / "mylist.csv").open("r", encoding="utf-8") as file:
         reader = csv.reader(file)
         next(reader)
         symbol_list = [row[0] for row in reader]

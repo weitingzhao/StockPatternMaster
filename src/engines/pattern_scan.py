@@ -5,15 +5,14 @@ from tqdm import tqdm
 from pathlib import Path
 from datetime import datetime
 
-from src.engine.Plotter import Plotter
-from src.engine.plot_engine import PlotEngine
+from src.engines.Plotter import Plotter
 from src.instance import Instance
 from argparse import ArgumentParser
 from concurrent.futures import Future
-from src.engine import pattern_detector_engine
+import src.engines.pattern_detector as pattern_detector_engine
 from typing import Tuple, Callable, List, Optional
-from src.plugin.pattern_detector import PatternDetector
-from src.loaders.abstract_loader import AbstractLoader
+from src.engines.plugin.pattern import PatternDetector
+from src.engines.loaders.abstract_loader import AbstractLoader
 
 
 class PatternScanEngine:
@@ -27,7 +26,7 @@ class PatternScanEngine:
         # Dynamically initialize the loader
         loader_name = self.instance.Config.__dict__.get("LOADER", "treading_data_loader:TreadingDataLoader")
         module_name, class_name = loader_name.split(":")
-        loader_module = importlib.import_module(f"src.loaders.{module_name}")
+        loader_module = importlib.import_module(f"src.engines.loaders.{module_name}")
         self.loader = getattr(loader_module, class_name)(
             config=self.instance.Config.__dict__,
             tf=args.tf,

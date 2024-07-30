@@ -5,14 +5,10 @@ import sys
 from concurrent.futures import Future
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
-from tqdm import tqdm
-from src.engine.engine import Engine
+from typing import List
+from src.engines import Engine
 from src.instance import Instance
 from argparse import ArgumentParser
-from src.loaders.abstract_loader import AbstractLoader
-
-
 
 # Instance
 instance = Instance(__name__)
@@ -58,7 +54,7 @@ if "-c" in sys.argv or "--config" in sys.argv:
     idx = sys.argv.index("-c" if "-c" in sys.argv else "--config")
     CONFIG_PATH = Path(sys.argv[idx + 1]).expanduser().resolve()
 else:
-    CONFIG_PATH = instance.Config.user_config
+    CONFIG_PATH = instance.Config.FILE_user
 
 if CONFIG_PATH.exists():
     config = json.loads(CONFIG_PATH.read_bytes())

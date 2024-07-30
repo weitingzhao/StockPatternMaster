@@ -2,7 +2,7 @@ from typing import Literal, Optional
 from pathlib import Path
 import matplotlib.pyplot as plt
 import mplfinance as mpf
-from src.loaders.abstract_loader import AbstractLoader
+from src.engines.loaders.abstract_loader import AbstractLoader
 
 
 class Plotter:

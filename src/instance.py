@@ -1,19 +1,12 @@
 import re
 import os
 import sys
-import json
-from pathlib import Path
-from typing import Dict
-from zoneinfo import ZoneInfo
-import pandas as pd
 import logging
-
+import pandas as pd
+from pathlib import Path
 from src.config import Config
-from src.loaders.csv_loader import CsvLoader
-from src.utilities.dates import Dates
-from src.loaders.json_loader import JsonLoader
+from zoneinfo import ZoneInfo
 from src.utilities.tools import Tools
-from src.loaders.web_loader import WebLoader
 
 # import tzlocal
 pip = "pip" if "win" in sys.platform else "pip3"
@@ -25,14 +18,10 @@ except ModuleNotFoundError:
 
 class Instance:
 
-    def __init__(self, name: str = __name__, config_path: Path = None):
+    def __init__(self, config: Config = None):
         # Set the basic parameters
-        self.__name__ = name
-        source_dir = Path(__file__).parents[1]
-        self.File_User = Path(source_dir / "user.json")
-        self.Config: Config = Config(self.File_User if config_path is None else config_path)
-        self.ROOT = self.Path_exist(Path(self.Config.__dict__.get("DATA_ROOT", source_dir / "data")))
-
+        self.Config = config
+        self.ROOT = self.Path_exist(self.Config.DATA_ROOT)
         # <editor-fold desc="Declare file & folder">
         # data structure
         self.ROOT_Logs      = self.Path_exist(self.ROOT / self.Config.FOLDER_Log)
@@ -73,7 +62,7 @@ class Instance:
 
         # <editor-fold desc="Setup Tools">
         # Logger
-        self.logger = self._log_configure(self.__name__)
+        self.logger = self._log_initial(self.Config.__name__)
         # Exception custom handler (Set the sys.excepthook)
         sys.excepthook = self._log_unhandled_exception
         # Tools
@@ -93,7 +82,7 @@ class Instance:
             "Unhandled exception", exc_info=(exc_type, exc_value, exc_traceback)
         )
 
-    def _log_configure(self, name: str) -> logging.Logger:
+    def _log_initial(self, name: str) -> logging.Logger:
         """Return a logger instance by name
         Creates a file handler to log messages with level WARNING and above
         Creates a stream handler to log messages with level INFO and above
@@ -133,28 +122,3 @@ class Instance:
             path.touch()
         return path
 
-    def config_json(self):
-        return JsonLoader(self.File_User)
-
-    def config_new(self, user_path: Path):
-        self.Config = Config(user_path)
-        return self.Config
-
-    def csv_tradings(self, *args) -> CsvLoader:
-        path = self.ROOT_Data.joinpath(*args)
-        self.Path_exist(path)
-        return CsvLoader(path)
-
-    def json_Data(self, *args):
-        return self.json(root=self.ROOT_Data, *args)
-
-    def json_Research(self, *args):
-        return self.json(root=self.ROOT_Research, *args)
-
-    def json(self, root:Path, *args):
-        path = root.joinpath(*args)
-        self.Path_exist(path)
-        return JsonLoader(path)
-
-    def web(self, url: str) -> WebLoader:
-        return WebLoader(self.logger, url)

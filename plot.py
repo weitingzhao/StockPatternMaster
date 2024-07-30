@@ -1,5 +1,5 @@
 from datetime import datetime
-from src.engine.engine import Engine
+from src.engines import Engine
 from src.instance import Instance
 from argparse import ArgumentParser
 import mplfinance as mpl
@@ -47,7 +47,7 @@ parser.add_argument("--dlv", action="store_true", help="Delivery Mode. Plot deli
 
 # Register Plugins
 if len(instance.PLOT_PLUGINS):
-    _.Plugins().register(instance.PLOT_PLUGINS, parser)
+    _.Plugin().register(instance.PLOT_PLUGINS, parser)
 
 # Parse the arguments
 args = parser.parse_args()
