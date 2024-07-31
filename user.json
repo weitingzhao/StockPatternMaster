@@ -1,6 +1,6 @@
 {
    "DEFAULT_TF": "daily",
-   "LOADER": "treading_data_loader:TreadingDataLoader",
+   "LOADER": "trading_data_loader:TradingDataLoader",
    "DATA_ROOT": "/home/vision/Desktop/Stock_Data",
    "DATA_PATH": "/home/vision/Desktop/Stock_Data/data/daily",
    "SYM_LIST": "/home/vision/Desktop/Stock_Data/research/watch/mylist.csv",

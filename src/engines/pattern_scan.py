@@ -23,7 +23,7 @@ class PatternScanEngine:
         self.PatternDetector = PatternDetector(self.instance)
 
         # Dynamically initialize the loader
-        loader_name = self.instance.Config.__dict__.get("LOADER", "treading_data_loader:TreadingDataLoader")
+        loader_name = self.instance.Config.__dict__.get("LOADER", "trading_data_loader:TradingDataLoader")
         module_name, class_name = loader_name.split(":")
         loader_module = importlib.import_module(f"src.engines.loaders.{module_name}")
         self.loader = getattr(loader_module, class_name)(

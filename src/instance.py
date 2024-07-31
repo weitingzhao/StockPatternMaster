@@ -22,6 +22,7 @@ class Instance:
         # Set the basic parameters
         self.Config = config
         self.ROOT = self.Path_exist(self.Config.DATA_ROOT)
+
         # <editor-fold desc="Declare file & folder">
         # data structure
         self.ROOT_Logs      = self.Path_exist(self.ROOT / self.Config.FOLDER_Log)
@@ -48,9 +49,9 @@ class Instance:
 
         # <editor-fold desc="Declare Format">
         # Regex
-        self.splitRegex = re.compile(r"(\d+\.?\d*)[\/\- a-z\.]+(\d+\.?\d*)")
+        self.splitRegex = re.compile(r"(\d+\.?\d*)[/\- a-z.]+(\d+\.?\d*)")
         self.bonusRegex = re.compile(r"(\d+) ?: ?(\d+)")
-        self.headerText = (b"Date,Open,High,Low,Close,Volume,TOTAL_TRADES,QTY_PER_TRADE,DLV_QTY\n")
+        self.headerText = b"Date,Open,High,Low,Close,Volume,TOTAL_TRADES,QTY_PER_TRADE,DLV_QTY\n"
         # Timezone
         self.tz_local = tzlocal.get_localzone()
         self.tz_US = ZoneInfo(self.Config.TIME_ZONE)
@@ -90,7 +91,6 @@ class Instance:
         Parameters:
         name (str): Pass __name__ for module level logger
         """
-
         logger = logging.getLogger(name)
         logger.setLevel(logging.INFO)
 

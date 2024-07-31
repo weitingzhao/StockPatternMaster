@@ -21,6 +21,9 @@ class Engine:
     def Plot(self, args, parser) -> engine.Plot:
         return engine.Plot(self.Instance, args, self.Plugins(), parser)
 
+    def Visualization(self) -> engine.Visualization:
+        return engine.Visualization(self.Instance)
+
     def Pattern_List(self) -> list:
         return engine.get_pattern_list()
 

@@ -1,14 +1,16 @@
+import logging
+import pandas as pd
 from pathlib import Path
-from datetime import datetime, timedelta
 from typing import Optional
 import src.engines.loaders as loader
-import pandas as pd
-import logging
+from datetime import datetime, timedelta
+from src.engines.loaders.abstract_loader import AbstractLoader
+
 
 logger = logging.getLogger(__name__)
 
 
-class TradingDataLoader(loader.AbstractLoader):
+class TradingDataLoader(AbstractLoader):
     """
     A class to load Daily or higher timeframe data from CSV files.
 
