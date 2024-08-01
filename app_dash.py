@@ -1,6 +1,6 @@
 from dash import dcc, html, dash_table, Dash
 from dash.dependencies import Input, Output
-import src.app as fn
+import src.controller.app as fn
 import src as spm
 
 app = Dash(__name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}])
@@ -150,7 +150,7 @@ def update_plot_and_table(symbol_value, window_size_value, future_size_value, to
     offset_traces = False if len(checkbox_value) == 0 else True
 
     # Visualize the data on a graph
-    fig = spm.engine.Visualization().visualize_graph(
+    fig = spm.engine.web_visualization().visualize_graph(
         match_values_list=values,
         match_symbols=symbols,
         match_str_dates=start_end_dates,

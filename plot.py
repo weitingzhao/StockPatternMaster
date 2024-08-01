@@ -11,7 +11,7 @@ def process_plot(df, plot_args):
 instance = Instance(__name__)
 _ = Engine(instance)
 # Group Init
-parser = ArgumentParser(prog="plot.py")
+parser = ArgumentParser(prog="trading_pattern_chart.py")
 group = parser.add_mutually_exclusive_group(required=True)
 
 # Group arguments setup
@@ -39,7 +39,7 @@ parser.add_argument("--vol-sma", type=int, nargs="+", metavar="int", help="Volum
 parser.add_argument("-d", "--date", type=datetime.fromisoformat, metavar="str",
                     help="ISO format date YYYY-MM-DD.")
 parser.add_argument("--period", action="store", type=int, metavar="int",
-                    help=f"Number of Candles to plot. Default {instance.Config.PLOT_DAYS}")
+                    help=f"Number of Candles to local. Default {instance.config.PLOT_DAYS}")
 parser.add_argument("--snr", action="store_true",help="Add Support and Resistance lines on chart")
 parser.add_argument("-r", "--resume", action="store_true",
                     help="Resume a watchlist from last viewed chart.")
@@ -54,7 +54,7 @@ args = parser.parse_args()
 if args.tf == "weekly" and args.dlv:
     exit("WARN: Delivery mode is not supported on weekly timeframe.")
 
-# Core function -> plot chart
+# Core function -> local chart
 plotter = _.Plot(args, parser=parser)
 symbol_list = plotter.symbol_list
 
@@ -74,8 +74,8 @@ plotter.idx = 0
 plotter.len = len(symbol_list)
 answer = "n"
 
-if args.resume and hasattr(instance.Config, "PLOT_RESUME"):
-    resume = getattr(instance.Config, "PLOT_RESUME")
+if args.resume and hasattr(instance.config, "PLOT_RESUME"):
+    resume = getattr(instance.config, "PLOT_RESUME")
     if resume["watch"] == args.watch:
         plotter.idx = resume["idx"]
 
@@ -84,7 +84,7 @@ while True:
         if plotter.idx == plotter.len:
             break
         print(f"{plotter.idx + 1} of {plotter.len}", flush=True, end="\r"*11)
-        # Core function -> plot chart
+        # Core function -> local chart
         plotter.plot(symbol_list[plotter.idx])
 
     answer = plotter.key

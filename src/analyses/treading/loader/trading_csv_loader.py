@@ -2,15 +2,14 @@ import logging
 import pandas as pd
 from pathlib import Path
 from typing import Optional
-import src.engines.loaders as loader
 from datetime import datetime, timedelta
-from src.engines.loaders.abstract_loader import AbstractLoader
+from src.analyses.treading.loader.abstract_loader import AbstractLoader
 
 
 logger = logging.getLogger(__name__)
 
 
-class TradingDataLoader(AbstractLoader):
+class TradingCsvLoader(AbstractLoader):
     """
     A class to load Daily or higher timeframe data from CSV files.
 
@@ -19,7 +18,7 @@ class TradingDataLoader(AbstractLoader):
     :type config: dict
     :param timeframe: daily, weekly or monthly
     :type timeframe: str
-    :param end_date: End date upto which date must be returned
+    :param end_date: End date up to which date must be returned
     :type end_date: Optional[datetime]
     :param period: Number of lines to return from end_date or end of file
 
@@ -34,8 +33,7 @@ class TradingDataLoader(AbstractLoader):
             end_date: Optional[datetime] = None,
             period: int = 160,
     ):
-
-        # Closed : No need to close method to be called for this Class
+        # Closed: No need to close method to be called for this Class
         self.closed = True
         # Time frame
         self.default_timeframe = str(config.get("DEFAULT_TF", "daily"))
@@ -92,7 +90,7 @@ class TradingDataLoader(AbstractLoader):
 
         try:
             csv_loader = loader.CsvLoader(file)
-            df = csv_loader.load(
+            df = csv_loader.load_symbol_history(
                 period=self.period,
                 end_date=self.end_date,
                 chunk_size=self.chunk_size

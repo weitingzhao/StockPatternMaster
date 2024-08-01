@@ -1,7 +1,8 @@
 {
+   "ROOT": "/home/vision/Desktop/Stock_Data",
    "DEFAULT_TF": "daily",
-   "LOADER": "trading_data_loader:TradingDataLoader",
-   "DATA_ROOT": "/home/vision/Desktop/Stock_Data",
+   "LOADER": "trading_csv_loader:TradingCsvLoader",
+
    "DATA_PATH": "/home/vision/Desktop/Stock_Data/data/daily",
    "SYM_LIST": "/home/vision/Desktop/Stock_Data/research/watch/mylist.csv",
    "SAVE_FOLDER": "/home/vision/Desktop/Stock_Data/research/patterns",
@@ -13,5 +14,12 @@
          "oversold": 20,
          "line_color": "teal"
       }
+   },
+   "DB_CONN": {
+      "host": "localhost",
+      "port": 5432,
+      "dbname": "financedata",
+      "user": "wzhao",
+      "password": "Zhao12345!@#"
    }
 }

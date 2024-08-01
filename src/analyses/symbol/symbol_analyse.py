@@ -1,29 +1,22 @@
 import json
-from pathlib import Path
-
 import pandas as pd
+from typing import List
+from src.service import Service
+from src.analyses.base_analyse import BaseAnalyse
 
-from src.instance import Instance
 
+class SymbolAnalyse(BaseAnalyse):
 
-class SymbolsEngine:
+    def __init__(self, service: Service):
+        super().__init__(service)
 
-    def __init__(self, instance: Instance):
-        self._ = instance
-        self.API_KEY = self._.Config.API_KEY_Alphavantage
-
-    def fetch_full_stock_list(self):
-        url = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={self.API_KEY}'
-        data = self._.web(url).request()
-        self._.csv_tradings("symbols", f"FullSymbols.csv").save_str(data)
-
-    def analyze_stock_list(self):
+    def analyze_symbols_full_list(self):
         # Load the stock list
-        pd_symbols = pd.read_csv(self._.FOLDER_Symbols / "FullSymbols.csv")
+        pd_symbols = pd.read_csv(self.Config.FOLDER_Symbols / "FullSymbols.csv")
 
         # step 1. Filter by status
         pd_active_symbols = pd_symbols[pd_symbols['status'] == 'Active']
-        # step 2. Group by exchange and asset type
+        # Step 2. Group by exchange and asset type
         pd_symbols_grouped = pd_active_symbols.groupby(['exchange', 'assetType'])
         # step 3. Export grouped data to separate lists
         pd_grouped_list = {name: group for name, group in pd_symbols_grouped}
@@ -36,7 +29,7 @@ class SymbolsEngine:
         for name, group in pd_grouped_list.items():
             exchange = name[0]
             derivative = name[1]
-            csv = self._.csv_tradings("symbols", "exchange", exchange, f"{derivative}.csv")
+            csv = self.Engine.csv("symbols", "exchange", exchange, f"{derivative}.csv")
             csv.save_df(group)
 
             # Collect json_symbols information
@@ -50,15 +43,15 @@ class SymbolsEngine:
                 json_symbols['count'][derivative] = 0
             json_symbols['count'][derivative] += total
         # Category 1.b Symbols json_symbols
-        self._.json_Research("watch", "symbols_summary.json").save(json_symbols)
+        self.Engine.json_research("watch", "symbols_summary.json").save(json_symbols)
 
         # Category 2. Equity by Sector & Industry
-        json_file_sector = self._.Path_exist(self._.FOLDER_Watch / "symbols_sector.json")
-        json_file_industry = self._.Path_exist(self._.FOLDER_Watch / "symbols_industry.json")
+        json_file_sector = self.path_exist(self.Config.FOLDER_Watch / "symbols_sector.json")
+        json_file_industry = self.path_exist(self.Config.FOLDER_Watch / "symbols_industry.json")
 
         json_symbols_sector = {}
-        json_symbols_industy = {}
-        for json_file in  (self._.FOLDER_Infos / "EQUITY").glob("*.json"):
+        json_symbols_industry = {}
+        for json_file in (self.Config.FOLDER_Infos / "EQUITY").glob("*.json"):
             with (open(json_file, "r")) as file:
                 data = json.load(file)
                 sector = data.get("sector", "Unknown")
@@ -70,9 +63,9 @@ class SymbolsEngine:
                     json_symbols_sector[sector] = []
                 json_symbols_sector[sector].append(symbol)
                 # industry
-                if industry not in json_symbols_industy:
-                    json_symbols_industy[industry] = []
-                json_symbols_industy[industry].append(symbol)
+                if industry not in json_symbols_industry:
+                    json_symbols_industry[industry] = []
+                json_symbols_industry[industry].append(symbol)
 
         with open(json_file_sector, "w", encoding='utf-8') as json_file:
             json.dump({
@@ -81,7 +74,14 @@ class SymbolsEngine:
             }, json_file, ensure_ascii=False, indent=4)
         with open(json_file_industry, "w", encoding='utf-8') as json_file:
             json.dump({
-                "summary": {sector: len(symbols) for sector, symbols in json_symbols_industy.items()},
-                "detail": json_symbols_industy
+                "summary": {sector: len(symbols) for sector, symbols in json_symbols_industry.items()},
+                "detail": json_symbols_industry
             }, json_file, ensure_ascii=False, indent=4)
 
+    def analyse_stock_symbols(self) -> List[str]:
+        json_file_path = self.Config.FOLDER_Watch / "symbols_sector.json"
+        with open(json_file_path, "r", encoding='utf-8') as json_file:
+            data = json.load(json_file)
+            symbols_sector = data.get("detail", {})
+            full_symbols = [symbol for symbols in symbols_sector.values() for symbol in symbols]
+        return full_symbols

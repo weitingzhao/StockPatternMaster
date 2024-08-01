@@ -2,15 +2,15 @@ from typing import List, Tuple
 
 import numpy as np
 from plotly import graph_objs
+from src.analyse import Analyse
+from src.charts.base_chart import BaseChart
 from sklearn.preprocessing import minmax_scale
 
-from src import Instance
 
+class TradingVisualizeChart(BaseChart):
 
-class VisualizationEngine:
-
-    def __init__(self, instance: Instance):
-        self._ = instance
+    def __init__(self, analyse: Analyse):
+        super().__init__(analyse)
 
     FIG_BG_COLOR = "#F9F9F9"
     ANCHOR_COLOR = "#FF372D"
@@ -51,28 +51,30 @@ class VisualizationEngine:
                 diff = minmax_anchor_values[window_size - 1] - minmax_matched_values[window_size - 1]
                 minmax_matched_values = minmax_matched_values + diff
             trace_name = f"{i}) {match_symbol} ({match_start_date} - {match_end_date})"
-            trace = graph_objs.Scatter(x=x,
-                                       y=minmax_matched_values,
-                                       name=trace_name,
-                                       meta=trace_name,
-                                       mode="lines",
-                                       line=dict(color=self.VALUES_COLOR),
-                                       opacity=opacity_values[i],
-                                       customdata=original_values,
-                                       hovertemplate="<b>%{meta}</b><br>Norm. val.: %{y:.2f}<br>Value: %{customdata:.2f}$<extra></extra>")
+            trace = graph_objs.Scatter(
+                x=x,
+                y=minmax_matched_values,
+                name=trace_name,
+                meta=trace_name,
+                mode="lines",
+                line=dict(color=self.VALUES_COLOR),
+                opacity=opacity_values[i],
+                customdata=original_values,
+                hovertemplate="<b>%{meta}</b><br>Norm. val.: %{y:.2f}<br>Value: %{customdata:.2f}$<extra></extra>")
             fig.add_trace(trace)
 
         # Draw the anchor series
         x = list(range(1, len(anchor_values) + 1))
         trace_name = f"Anchor ({anchor_symbol})"
-        trace = graph_objs.Scatter(x=x,
-                                   y=minmax_anchor_values,
-                                   name=trace_name,
-                                   meta=trace_name,
-                                   mode="lines+markers",
-                                   line=dict(color=self.ANCHOR_COLOR),
-                                   customdata=anchor_original_values,
-                                   hovertemplate="<b>%{meta}</b><br>Norm. val.: %{y:.2f}<br>Value: %{customdata:.2f}$<extra></extra>")
+        trace = graph_objs.Scatter(
+            x=x,
+            y=minmax_anchor_values,
+            name=trace_name,
+            meta=trace_name,
+            mode="lines+markers",
+            line=dict(color=self.ANCHOR_COLOR),
+            customdata=anchor_original_values,
+            hovertemplate="<b>%{meta}</b><br>Norm. val.: %{y:.2f}<br>Value: %{customdata:.2f}$<extra></extra>")
         fig.add_trace(trace)
 
         # Add "last market close" line
@@ -84,18 +86,20 @@ class VisualizationEngine:
         # fig.update_yaxes(showspikes=True, spikecolor="black", spikethickness=1)
 
         x_axis_ticker_labels = list(range(-window_size, future_size + 1))
-        fig.update_layout(title=f"Similar patters for {anchor_symbol} based on historical market close data",
-                          yaxis=dict(title="Normalized Value"),
-                          xaxis=dict(title="Days",
-                                     tickmode="array",
-                                     tickvals=list(range(len(x_axis_ticker_labels))),
-                                     ticktext=x_axis_ticker_labels),
-                          autosize=True,
-                          plot_bgcolor=self.FIG_BG_COLOR,
-                          paper_bgcolor=self.FIG_BG_COLOR,
-                          legend=dict(font=dict(size=9), orientation="h", yanchor="bottom", y=-0.5),
-                          showlegend=show_legend,
-                          spikedistance=1000,
-                          hoverdistance=100)
+        fig.update_layout(
+            title=f"Similar patters for {anchor_symbol} based on historical market close data",
+            yaxis=dict(title="Normalized Value"),
+            xaxis=dict(
+                title="Days",
+                tickmode="array",
+                tickvals=list(range(len(x_axis_ticker_labels))),
+                ticktext=x_axis_ticker_labels),
+            autosize=True,
+            plot_bgcolor=self.FIG_BG_COLOR,
+            paper_bgcolor=self.FIG_BG_COLOR,
+            legend=dict(font=dict(size=9), orientation="h", yanchor="bottom", y=-0.5),
+            showlegend=show_legend,
+            spikedistance=1000,
+            hoverdistance=100)
 
         return fig

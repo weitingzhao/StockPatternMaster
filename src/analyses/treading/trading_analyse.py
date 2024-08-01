@@ -4,34 +4,35 @@ import concurrent
 from tqdm import tqdm
 from pathlib import Path
 from datetime import datetime
-
-from src.engines.Plotter import Plotter
-from src.instance import Instance
 from argparse import ArgumentParser
 from concurrent.futures import Future
-import src.engines.pattern_detector as pattern_detector_engine
+from src.service import Service
+from src.charts.local.Plotter import Plotter
+from src.analyses.base_analyse import BaseAnalyse
 from typing import Tuple, Callable, List, Optional
-from src.engines.plugin.pattern import PatternDetector
-import src.engines.loaders as loader
+from src.analyses.treading.loader.abstract_loader import AbstractLoader
+import src.analyses.treading.patterns.pattern as Pattern
+from src.analyses.treading.patterns.method.pattern_detector import PatternDetector
 
-class PatternScanEngine:
 
-    def __init__(self, instance: Instance, args: ArgumentParser):
+class TradingAnalyse(BaseAnalyse):
+
+    def __init__(self, service: Service, args: ArgumentParser):
+        super().__init__(service)
         # Setup instance, args, etc.
-        self.instance = instance
-        self.args = args
-        self.PatternDetector = PatternDetector(self.instance)
+        self.args: ArgumentParser = args
+        self.PatternDetector = PatternDetector(self.Logger)
 
         # Dynamically initialize the loader
-        loader_name = self.instance.Config.__dict__.get("LOADER", "trading_data_loader:TradingDataLoader")
+        loader_name = self.Config.__dict__.get("LOADER", "trading_csv_loader:TradingCsvLoader")
         module_name, class_name = loader_name.split(":")
-        loader_module = importlib.import_module(f"src.engines.loaders.{module_name}")
+        loader_module = importlib.import_module(f"src.analyses.loader.{module_name}")
         self.loader = getattr(loader_module, class_name)(
-            config=self.instance.Config.__dict__,
+            config=self.Config.__dict__,
             tf=args.tf,
             end_date=args.date)
 
-    def cleanup(self, loader: loader.AbstractLoader, futures: List[concurrent.futures.Future]):
+    def _cleanup(self, loader: AbstractLoader, futures: List[concurrent.futures.Future]):
         if futures:
             for future in futures:
                 future.cancel()
@@ -39,11 +40,11 @@ class PatternScanEngine:
         if loader.closed:
             loader.close()
 
-    def scan_pattern(
+    def _scan_pattern(
             self,
             symbol: str,
             functions: Tuple[Callable, ...],
-            loader: loader.AbstractLoader,
+            loader: AbstractLoader,
             bars_left: int = 6,
             bars_right: int = 6
     ) -> List[dict]:
@@ -74,15 +75,15 @@ class PatternScanEngine:
             try:
                 result = function(self.PatternDetector, symbol, df, pivots)
             except Exception as e:
-                self.instance.logger.exception(f"SYMBOL name: {symbol}", exc_info=e)
+                self.Logger.exception(f"SYMBOL name: {symbol}", exc_info=e)
                 return patterns
-            # add detected pattern into result
+            # add detected patterns into result
             if result:
                 patterns.append(self.PatternDetector.make_serializable(result))
 
         return patterns
 
-    def process_by_pattern(
+    def _process_by_pattern(
             self,
             symbol_list: List,
             fns: Tuple[Callable, ...],
@@ -94,8 +95,8 @@ class PatternScanEngine:
         state_file = None
         filtered = None
 
-        if self.instance.Config.__dict__.get("SAVE_STATE", False) and self.args.file and not self.args.date:
-            state_file = self.instance.FOLDER_States / f"{self.args.file.stem}_{self.args.pattern}.json"
+        if self.Config.__dict__.get("SAVE_STATE", False) and self.args.file and not self.args.date:
+            state_file = self.Config.FOLDER_States / f"{self.args.file.stem}_{self.args.pattern}.json"
             if not state_file.parent.is_dir():
                 state_file.parent.mkdir(parents=True)
             state = json.loads(state_file.read_bytes()) if state_file.exists() else {}
@@ -103,19 +104,19 @@ class PatternScanEngine:
         # determine the folder to save to in a case save option is set
         save_folder: Optional[Path] = None
         image_folder = f"{datetime.now():%d_%b_%y_%H%M}"
-        if "SAVE_FOLDER" in self.instance.Config.__dict__:
-            save_folder = Path(self.instance.Config.__dict__["SAVE_FOLDER"]) / image_folder
+        if "SAVE_FOLDER" in self.Config.__dict__:
+            save_folder = Path(self.Config.__dict__["SAVE_FOLDER"]) / image_folder
         if self.args.save:
             save_folder = self.args.save / image_folder
         if save_folder and not save_folder.exists():
-            self.instance.Path_exist(save_folder)
+            self.path_exist(save_folder)
 
         # begin a scan process
         with concurrent.futures.ProcessPoolExecutor() as executor:
             # load concurrent task
             for sym in symbol_list:
                 future = executor.submit(
-                    self.scan_pattern,
+                    self._scan_pattern,
                     symbol=sym,
                     functions=fns,
                     loader=self.loader,
@@ -130,8 +131,8 @@ class PatternScanEngine:
                 try:
                     result = future.result()
                 except Exception as e:
-                    self.cleanup(self.loader, futures)
-                    self.instance.logger.exception("Error in Future - scanning patterns", exc_info=e)
+                    self._cleanup(self.loader, futures)
+                    self.Logger.exception("Error in Future - scanning patterns", exc_info=e)
                     return []
                 patterns.extend(result)
             futures.clear()
@@ -148,7 +149,7 @@ class PatternScanEngine:
                 detected = set()
                 for dct in patterns:
                     # unique identifier
-                    key = f'{dct["sym"]}-{dct["pattern"]}'
+                    key = f'{dct["sym"]}-{dct["patterns"]}'
                     detected.add(key)
                     if not len_state:
                         # if the state is empty, this is a first run
@@ -158,24 +159,24 @@ class PatternScanEngine:
                         continue
                     if key in state:
                         if dct["start"] == state[key]["start"]:
-                            # if the pattern starts on the same date,
-                            # they are the same previously detected pattern
+                            # if the patterns starts on the same date,
+                            # they are the same previously detected patterns
                             continue
-                        # Else there is a new pattern for the same key
+                        # Else there is a new patterns for the same key
                         state[key] = dct
                         filtered.append(dct)
-                    # new pattern
+                    # new patterns
                     filtered.append(dct)
                     state[key] = dct
                 # set difference - get keys in state dict not existing in detected
-                # These are pattern keys no longer detected and can be removed
+                # These are patterns keys no longer detected and can be removed
                 invalid_patterns = set(state.keys()) - detected
                 # Clean up stale patterns in state dict
                 for key in invalid_patterns:
                     state.pop(key)
                 if state_file:
                     state_file.write_text(json.dumps(state, indent=2))
-                    self.instance.logger.info(
+                    self.Logger.info(
                         f"\nTo view all current market patterns, run `py init.py --plot state/{state_file.name}\n"
                     )
 
@@ -192,14 +193,14 @@ class PatternScanEngine:
                     future = executor.submit(plotter.save, i.copy())
                     futures.append(future)
 
-                self.instance.logger.info("Saving images")
+                self.Logger.info("Saving images")
 
                 for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
                     try:
                         future.result()
                     except Exception as e:
-                        self.cleanup(self.loader, futures)
-                        self.instance.logger.exception("Error in Futures - Saving images ", exc_info=e)
+                        self._cleanup(self.loader, futures)
+                        self.Logger.exception("Error in Futures - Saving images ", exc_info=e)
                         return []
 
         patterns_to_output.append({
@@ -208,6 +209,7 @@ class PatternScanEngine:
         })
         return patterns_to_output
 
+    # Public methods
     def process_by_pattern_name(
             self,
             symbol_list: List,
@@ -215,8 +217,8 @@ class PatternScanEngine:
             futures: List[concurrent.futures.Future]
     ) -> List[dict]:
 
-        fn_dict = pattern_detector_engine.get_pattern_dict()
-        key_list = pattern_detector_engine.get_pattern_list()
+        fn_dict = Pattern.get_pattern_dict()
+        key_list = Pattern.get_pattern_list()
         # Get function out
         fn = fn_dict[pattern_name]
 
@@ -233,8 +235,8 @@ class PatternScanEngine:
             fns = tuple(v for k, v in fn_dict.items() if k in key_list[3:] and callable(v))
 
         try:
-            return self.process_by_pattern(symbol_list, fns, futures)
+            return self._process_by_pattern(symbol_list, fns, futures)
         except KeyboardInterrupt:
-            self.cleanup(self.loader, futures)
-            self.instance.logger.info("User exit")
+            self._cleanup(self.loader, futures)
+            self.Logger.info("User exit")
             exit()

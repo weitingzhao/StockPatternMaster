@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from logging import Logger
+from src import Config
 from src.instance import Instance
 from typing import NamedTuple, Optional, TypeVar, Any
 
@@ -24,9 +26,8 @@ class Line(NamedTuple):
 
 class PatternDetector:
 
-    def __init__(self, instance: Instance):
-        self._ = instance
-        self.logger = self._.logger
+    def __init__(self, logger: Logger):
+        self.logger = logger
 
     def get_prev_index(self, index: pd.DatetimeIndex, idx: pd.Timestamp) -> int:
         pos = index.get_loc(idx)
@@ -78,14 +79,14 @@ class PatternDetector:
         return tr.tr.rolling(window=window).mean()
 
     def is_bullish_vcp(self, a: float, b: float, c: float, d: float, e: float, avg_bar_length: float) -> bool:
-        r"""Volatility Contraction pattern
+        r"""Volatility Contraction patterns
            A        C
             \      /\    E
              \    /  \  /
               \  /    \/
                \/      D
                 B
-        B is the lowest point in pattern
+        B is the lowest point in patterns
         D is second lowest after B
         """
         if c > a and abs(a - c) >= avg_bar_length * 0.5:
@@ -227,14 +228,14 @@ class PatternDetector:
 
     def is_bearish_vcp(self, a: float, b: float, c: float, d: float, e: float, avg_bar_length: float) -> bool:
         r"""
-        Volatility Contraction pattern
+        Volatility Contraction patterns
               B
              /\      D
             /  \    /\
            /    \  /  \
           /      \/    E
          A       C
-        B is the highest point in pattern
+        B is the highest point in patterns
         D is second highest after B
         """
         if c < a and abs(a - c) >= avg_bar_length * 0.5:

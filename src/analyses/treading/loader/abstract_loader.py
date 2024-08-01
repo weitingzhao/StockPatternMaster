@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Optional
 import pandas as pd
+from typing import Optional
+from datetime import datetime
+from abc import ABC, abstractmethod
 
 
 class AbstractLoader(ABC):

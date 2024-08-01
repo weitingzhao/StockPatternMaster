@@ -1,5 +1,5 @@
 import pandas as pd
-from src.engines.plugin.pattern import PatternDetector
+from src.analyses.treading.patterns.method.pattern_detector import PatternDetector
 from typing import Optional, Dict, Union, Callable, Tuple
 
 
@@ -27,7 +27,7 @@ def get_pattern_tuple(pattern_name: str) -> Tuple[Callable, ...]:
     fn_dict = get_pattern_dict()
     # get function out
     fn = fn_dict[pattern_name]
-    # base on fn style and name return pattern tuples
+    # base on fn style and name return patterns tuples
     if callable(fn):
         return (fn,)
     elif fn == "bull":
@@ -43,12 +43,12 @@ def get_pattern_tuple(pattern_name: str) -> Tuple[Callable, ...]:
 def find_bullish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Volatility Contraction Pattern Bullish.
     Returns None if no patterns found.
-    Else returns a Tuple of dicts containing plot arguments and pattern data.
+    Else returns a Tuple of dicts containing local arguments and patterns data.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
     pivot_len = pivots.shape[0]
     # P = Price V = Volume
-    # a 1st high position, also Max high point in history
+    # a 1st high position, also Max high point in treading
     a_idx = pivots["P"].idxmax()
     a = pivots.at[a_idx, "P"]
     # e
@@ -92,7 +92,7 @@ def find_bullish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                     c_idx != df.loc[c_idx:, "Close"].idxmax()
                     or d_idx != df.loc[d_idx:, "Close"].idxmin()
             ):
-                # Level C is breached, current pattern is not valid
+                # Level C is breached, current patterns is not valid
                 # check if C is the last pivot formed
                 if pivots.index[-1] == c_idx or pivots.index[-1] == d_idx:
                     break
@@ -123,7 +123,7 @@ def find_bullish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 def find_double_bottom(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Double bottom.
     Returns None if no patterns found.
-    Else returns a Tuple of dicts containing plot arguments and pattern data.
+    Else returns a Tuple of dicts containing local arguments and patterns data.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
     pivot_len = pivots.shape[0]
@@ -166,7 +166,7 @@ def find_double_bottom(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: p
 
         if _.is_double_bottom(a, b, c, d, a_vol, c_vol, avg_bar_length, atr):
             if a == df.at[a_idx, "High"] or b == df.at[b_idx, "Low"] or c == df.at[c_idx, "High"]:
-                # check that the pattern is well-formed
+                # check that the patterns is well-formed
                 a_idx, a, a_vol = c_idx, c, c_vol
                 continue
 
@@ -202,7 +202,7 @@ def find_double_bottom(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: p
 def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Head and Shoulders - Bullish
     Returns None if no patterns found.
-    Else returns an Tuple of dicts containing plot arguments and pattern data.
+    Else returns an Tuple of dicts containing local arguments and patterns data.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
 
@@ -258,7 +258,7 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                     or d == df.at[d_idx, "Low"]
                     or e == df.at[e_idx, "High"]
             ):
-                # Make sure pattern is well formed
+                # Make sure patterns is well formed
                 c_idx, c = e_idx, e
                 continue
 
@@ -268,7 +268,7 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                     highest_after_e > neckline_price
                     and abs(highest_after_e - neckline_price) > avgBarLength
             ):
-                # check if neckline was breached after pattern formation
+                # check if neckline was breached after patterns formation
                 c_idx, c = e_idx, e
                 continue
 
@@ -320,7 +320,7 @@ def find_reverse_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Volatility Contraction Pattern Bearish.
     Returns None if no patterns found.
-    Else returns a Tuple of dicts containing plot arguments and pattern data.
+    Else returns a Tuple of dicts containing local arguments and patterns data.
     """
 
     assert isinstance(pivots.index, pd.DatetimeIndex)
@@ -368,7 +368,7 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
                     d_idx != df.loc[d_idx:, "Close"].idxmax()
                     or c_idx != df.loc[c_idx:, "Close"].idxmin()
             ):
-                # check that the pattern is well formed
+                # check that the patterns is well formed
                 if pivots.index[-1] == d_idx or pivots.index[-1] == c_idx:
                     break
                 a_idx, a = c_idx, c
@@ -400,7 +400,7 @@ def find_bearish_vcp(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.
 def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Double Top.
     Returns None if no patterns found.
-    Else returns a Tuple of dicts containing plot arguments and pattern data.
+    Else returns a Tuple of dicts containing local arguments and patterns data.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
 
@@ -456,7 +456,7 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
                     c_idx != df.loc[c_idx:, "Close"].idxmax()
                     or b_idx != df.loc[b_idx:, "Close"].idxmin()
             ):
-                # Level C is breached, current pattern is not valid
+                # Level C is breached, current patterns is not valid
                 a_idx, a, a_vol = c_idx, c, c_vol
                 continue
 
@@ -481,7 +481,7 @@ def find_double_top(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.D
 def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Head and Shoulders - Bearish
     Returns None if no patterns found.
-    Else returns a Tuple of dicts containing plot arguments and pattern data.
+    Else returns a Tuple of dicts containing local arguments and patterns data.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
     pivot_len = pivots.shape[0]
@@ -539,7 +539,7 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
                     or d == df.at[d_idx, "High"]
                     or e == df.at[e_idx, "Low"]
             ):
-                # Make sure the pattern is well-formed and
+                # Make sure the patterns is well-formed and
                 # pivots are correctly anchored to highs and lows
                 c_idx, c = e_idx, e
                 continue
@@ -551,7 +551,7 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
                     lowest_after_e < neckline_price
                     and abs(lowest_after_e - neckline_price) > avg_bar_length
             ):
-                # check if the neckline was breached after pattern formation
+                # check if the neckline was breached after patterns formation
                 c_idx, c = e_idx, e
                 continue
 
@@ -604,7 +604,7 @@ def find_hns(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFram
 def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.DataFrame) -> Optional[dict]:
     """Find Triangles - Symmetric, Ascending, Descending.
     Returns None if no patterns found.
-    Else returns a Tuple of dicts containing plot arguments and pattern data.
+    Else returns a Tuple of dicts containing local arguments and patterns data.
     """
     assert isinstance(pivots.index, pd.DatetimeIndex)
 
@@ -673,7 +673,7 @@ def find_triangles(_: PatternDetector, sym: str, df: pd.DataFrame, pivots: pd.Da
 
             upper = _.generate_trend_line(df.High, a_idx, c_idx)
             lower = _.generate_trend_line(df.Low, b_idx, d_idx)
-            # If trendlines have intersected, pattern has played out
+            # If trendlines have intersected, patterns has played out
             if upper.line.end.y < lower.line.end.y:
                 break
 

@@ -3,6 +3,8 @@ from ta.momentum import RSIIndicator
 from mplfinance import make_addplot
 from pandas import Series
 
+from src import Config
+
 
 # To be added to src/setting/user.json
 # "PLOT_PLUGINS": {
@@ -20,7 +22,7 @@ def load(parser: ArgumentParser):
     )
 
 
-def main(df, plot_args, args, config):
+def main(df, plot_args, args, config: Config):
     if args.rsi:
         opts = config.PLOT_PLUGINS["RSI"]
 

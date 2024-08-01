@@ -8,10 +8,9 @@ class Utils:
     #<editor-fold desc="get support & resistance levels">
     @staticmethod
     def get_support_resistance_levels(
-            df: pd.DataFrame, mean_candle_size: float
-    ) -> List[Tuple[
-        Tuple[pd.DatetimeIndex, float], Tuple[pd.DatetimeIndex, float]
-    ]]:
+            df: pd.DataFrame,
+            mean_candle_size: float
+    ) -> List[Tuple[Tuple[pd.DatetimeIndex, float], Tuple[pd.DatetimeIndex, float]]]:
         """
         Identify potential support and resistance levels in a DataFrame.
         Parameters:
@@ -33,7 +32,7 @@ class Utils:
         ```
         Note:
         - It is recommended to provide a DataFrame with sufficient historical price data for accurate level identification.
-        - The function is designed for use in financial technical analysis.
+        - The function is designed for use in financial technical analyses.
         """
         levels = []
         # Calculate support and resistance levels
@@ -50,7 +49,11 @@ class Utils:
         return a_lines
 
     @staticmethod
-    def _calculate_level(name: str, df: pd.DataFrame, mean_candle_size: float, levels: List):
+    def _calculate_level(
+            name: str,
+            df: pd.DataFrame,
+            mean_candle_size: float,
+            levels: List):
         # filter for rejection from top
         # 2 successive highs followed by 2 successive lower highs
         local = df[name][
@@ -81,7 +84,9 @@ class Utils:
 
     #<editor-fold desc="get delivery levels">
     @staticmethod
-    def get_delivery_levels(df: pd.DataFrame, config: Config):
+    def get_delivery_levels(
+            df: pd.DataFrame,
+            config: Config):
         # Average of traded quantity
         ave_traded_quantity = Utils.simple_moving_average(df['QTY_PER_TRADE'], config.DLV_AVG_LEN)
         # Average of delivery quantity
@@ -92,7 +97,7 @@ class Utils:
         # above average Traded volume days
         df["TQ"] = df["QTY_PER_TRADE"] / ave_traded_quantity
 
-        # get combination of above average traded volume and delivery days
+        # get a combination of above average traded volume and delivery days
         df["IM_F"] = (df["TQ"] > 1.2) & (df["DQ"] > 1.2)
 
         # see https://github.com/matplotlib/mplfinance/blob/master/examples/marketcolor_overrides.ipynb
@@ -113,6 +118,7 @@ class Utils:
                 df.loc[idx, "MCOverrides"] = config.PLOT_DLV_L3_COLOR
             else:
                 df.loc[idx, "MCOverrides"] = config.PLOT_DLV_DEFAULT_COLOR
+
     #</editor-fold>
 
     @staticmethod
@@ -144,13 +150,16 @@ class Utils:
 
     @staticmethod
     def relative_strength(
-            close: pd.Series, index_close: pd.Series
+            close: pd.Series,
+            index_close: pd.Series
     ) -> pd.Series:
         return (close / index_close * 100).round(2)
 
     @staticmethod
     def mansfield_relative_strength(
-            close: pd.Series, index_close: pd.Series, period: int = 40
+            close: pd.Series,
+            index_close: pd.Series,
+            period: int = 40
     ) -> pd.Series:
         rs = Utils.relative_strength(close, index_close)
         sma_rs = rs.rolling(period).mean()
@@ -158,13 +167,15 @@ class Utils:
 
     @staticmethod
     def simple_moving_average(
-            close: pd.Series, period: int = 40
+            close: pd.Series,
+            period: int = 40
     ) -> pd.Series:
         return close.rolling(period).mean().round(2)
 
     @staticmethod
     def exponential_moving_average(
-            close: pd.Series, period: int = 40
+            close: pd.Series,
+            period: int = 40
     ) -> pd.Series:
         alpha = 2 / (period + 1)
         return close.ewm(alpha=alpha).mean().round(2)

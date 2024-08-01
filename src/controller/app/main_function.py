@@ -1,10 +1,16 @@
 import os
 import requests
 
-from src.api.rest_api_models import (TopKSearchResponse, SearchWindowSizeResponse, DataRefreshResponse,
-                             AvailableSymbolsResponse)
+from src.controller.api.rest_api_models import (TopKSearchResponse, SearchWindowSizeResponse, DataRefreshResponse,
+                                                AvailableSymbolsResponse)
 
 BASE_URL = os.environ.get("REST_API_URL", default="http://localhost:8000")
+
+
+def get_match_symbols(search_value=None) -> list:
+    res = requests.get(f"{BASE_URL}/match/symbols")
+    res = AvailableSymbolsResponse.model_validate(res.json())
+    return res.symbols
 
 
 def get_search_window_sizes() -> list:

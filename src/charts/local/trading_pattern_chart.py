@@ -9,10 +9,10 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 from argparse import ArgumentParser
 
-from matplotlib.collections import LineCollection
-
-from src.instance import Instance
+from src.analyse import Analyse
 from src.utilities.utils import Utils
+from src.charts.base_chart import BaseChart
+from matplotlib.collections import LineCollection
 
 HELP = """
 ## Help ##
@@ -22,7 +22,7 @@ N               Next chart
 F                Fullscreen
 P               Previous chart
 G               Toggle Major Grids
-Q               Quit plot.py
+Q               Quit trading_pattern_chart.py
 O               Zoom to Rect
 D               Toggle draw mode
 
@@ -38,7 +38,7 @@ Delete all lines: Hold Shift key + right mouse click
 """
 
 
-def format_coordinations(x, _):
+def format_coordination(x, _):
     s = " " * 5
     if df is None:
         return
@@ -66,7 +66,7 @@ def auto_redraw(func):
     return wrapper
 
 
-class PlotEngine:
+class TradingPatternChart(BaseChart):
     idx = len = 0
     line = []
     events = []
@@ -92,16 +92,21 @@ class PlotEngine:
         "fontdict": {"fontweight": "bold"}
     }
 
-    def __init__(self, instance: Instance, args, plugins, parser: ArgumentParser):
+    def __init__(
+            self,
+            analyse: Analyse,
+            args,
+            plugins,
+            parser: ArgumentParser):
+        super().__init__(analyse)
         plt.ioff()
         self.args = args
-        self._ = instance
         self.plugins = plugins
         self.parser = parser
-        self.daily_dir = self._.FOLDER_Daily
+        self.daily_dir = self._.Config.FOLDER_Daily
         # set parameters for args preset
         if args.preset and args.preset_save:
-            exit("plot.py: error: argument --preset: not allowed with argument --preset-save")
+            exit("trading_pattern_chart.py: error: argument --preset: not allowed with argument --preset-save")
         if args.preset:
             args = self._load_preset(args.preset)
             self.args = args
@@ -119,17 +124,17 @@ class PlotEngine:
         # watch_list & preset_list
         if args.ls:
             self._list_watch_and_preset()
-        # period & plot period
+        # period & local period
         if args.period:
             self.period = args.period
         else:
             if self.tf == "Weekly":
-                self.period = self._.Config.PLOT_WEEKS
+                self.period = self.Config.PLOT_WEEKS
             else:
-                self.period = self._.Config.PLOT_DAYS
+                self.period = self.Config.PLOT_DAYS
         self.plot_args = {
-            "type": self._.Config.PLOT_CHART_TYPE,
-            "style": self._.Config.PLOT_CHART_STYLE,
+            "type": self.Config.PLOT_CHART_TYPE,
+            "style": self.Config.PLOT_CHART_STYLE,
             "volume": args.volume,
             "xrotation": 0,
             "datetime_format": "%d %b %y",
@@ -148,7 +153,7 @@ class PlotEngine:
             self.plot_args["figsize"] = self._.Config.PLOT_SIZE \
                 if hasattr(self._.Config, "PLOT_SIZE") else (12, 6)
             self.plot_args["figscale"] = 1
-            self.save_dir = self._.FOLDER_Charts
+            self.save_dir = self._.Config.FOLDER_Charts
             # set save directory
             if args.preset:
                 self.save_dir = self.save_dir / args.preset
@@ -175,7 +180,7 @@ class PlotEngine:
                 tf=self.tf,
                 period=self.max_period,
                 column="Close",
-                toDate=self.args.date
+                to_date=self.args.date
             )
 
     def plot(self, symbol):
@@ -202,7 +207,7 @@ class PlotEngine:
         if self.args.save:
             return df
 
-        # Step 3. plot
+        # Step 3. local
         fig, axs = mpl.plot(df, **self.plot_args)
         # A workaround using ConciseDateFormatter and AutoDateLocator
         # with mplfinance
@@ -232,7 +237,7 @@ class PlotEngine:
         for ax in axs:
             ax.xaxis.set_major_locator(fixed_locator)
             ax.xaxis.set_major_formatter(fixed_formatter)
-            ax.format_coord = format_coordinations
+            ax.format_coord = format_coordination
 
         self.connection_id = fig.canvas.mpl_connect("key_press_event", self._on_key_press)
         self.fig = fig
@@ -279,36 +284,36 @@ class PlotEngine:
 
     # <editor-fold desc="Watch">
     def _load_watch_list(self, watch):
-        if watch.upper() not in self._.Config.WATCH:
+        if watch.upper() not in self._.config.WATCH:
             exit(f"Error: No watchlist named '{watch}'")
-        file = self._.FOLDER_Watch / self._.Config.WATCH[watch.upper()]
+        file = self._.FOLDER_Watch / self._.config.WATCH[watch.upper()]
         if not file.is_file():
             exit(f"Error: File not found {file}")
         return file.read_text().strip("\n").split("\n")
 
     def _save_watch(self, watch_name, watch_value):
         # Add
-        data = self._.config_json().load() if self._.config_json().is_file() else {}
+        data = self._.json_config().load_symbol_history() if self._.json_config().is_file() else {}
         if "WATCH" not in data:
             data["WATCH"] = {}
         data["WATCH"][watch_name.upper()] = watch_value
         # Save
-        self._.config_json().save(data)
+        self._.json_config().save(data)
         exit(f"Added watchlist '{watch_name}' with value '{watch_value}'")
 
     def _remove_watch(self, name):
         # Check
-        if name.upper() not in getattr(self._.Config, "WATCH"):
+        if name.upper() not in getattr(self._.config, "WATCH"):
             exit(f"Error: No watchlist named: '{name}'")
-        if not self._.config_json().is_file():
+        if not self._.json_config().is_file():
             exit("No config file")
         # Delete
-        data = self._.config_json().load()
+        data = self._.json_config().load_symbol_history()
         if "WATCH" not in data or name.upper() not in data["WATCH"]:
             exit(f"Error: No watchlist named: '{name}'")
         del data["WATCH"][name.upper()]
         # Save
-        self._.config_json().save(data)
+        self._.json_config().save(data)
         exit(f"Watchlist '{name}' removed.")
 
     # </editor-fold>
@@ -316,20 +321,20 @@ class PlotEngine:
     # <editor-fold desc="Preset">
     def _load_preset(self, preset):
         # Check
-        if preset not in getattr(self._.Config, "PRESET"):
+        if preset not in getattr(self._.config, "PRESET"):
             exit(f"Error: No preset named: '{preset}'")
         # Load
-        args_dct = getattr(self._.Config, "PRESET")[preset]
+        args_dct = getattr(self._.config, "PRESET")[preset]
         if self.args.resume:
             args_dct["resume"] = True
         return self.parser.parse_args(Utils.arg_parse_dict(args_dct))
 
     def _save_preset(self, preset):
         # Check
-        if self.args.watch and self.args.watch.upper() not in self._.Config.WATCH:
+        if self.args.watch and self.args.watch.upper() not in self._.config.WATCH:
             exit(f"Error: No watchlist named: '{self.args.watch}'")
         # Prepare
-        data = self._.config_json() if self._.config_json().is_file() else {}
+        data = self._.json_config() if self._.json_config().is_file() else {}
         # get a copy of __dict__ and filter only truthy values into a dict
         opts = {k: v for k, v in self.args.__dict__.items() if v}
         del opts["preset_save"]
@@ -337,22 +342,22 @@ class PlotEngine:
             data["PRESET"] = {}
         data["PRESET"][preset] = opts
         # Save
-        self._.config_json().save(data)
+        self._.json_config().save(data)
         print(f"Preset saved as '{preset}'")
 
     def _remove_preset(self, preset):
         # Check
-        if preset not in getattr(self._.Config, "PRESET"):
+        if preset not in getattr(self._.config, "PRESET"):
             exit(f"Error: No preset named: '{preset}'")
-        if not self._.config_json().is_file():
-            exit(f"File not found: {self._.config_json().Path}")
+        if not self._.json_config().is_file():
+            exit(f"File not found: {self._.json_config().Path}")
         # Delete
-        data = self._.config_json().load()
+        data = self._.json_config().load_symbol_history()
         if "PRESET" not in data or preset not in data["PRESET"]:
             exit(f"Error: No preset named: '{preset}'")
         del data["PRESET"][preset]
         # Save
-        self._.config_json().save(data)
+        self._.json_config().save(data)
         exit(f"Preset '{preset}' removed.")
 
     # </editor-fold>
@@ -360,10 +365,10 @@ class PlotEngine:
     # <editor-fold desc="Watch & Preset List">
     def _list_watch_and_preset(self):
         # setup watch list and preset list
-        self.watch_list = [i.lower() for i in self._.Config.WATCH.keys()] \
-            if hasattr(self._.Config, "WATCH") else []
-        self.preset_lst = [i.lower() for i in self._.Config.PRESET.keys()] \
-            if hasattr(self._.Config, "PRESET") else []
+        self.watch_list = [i.lower() for i in self._.config.WATCH.keys()] \
+            if hasattr(self._.config, "WATCH") else []
+        self.preset_lst = [i.lower() for i in self._.config.PRESET.keys()] \
+            if hasattr(self._.config, "PRESET") else []
 
         # check & result
         if not len(self.watch_list):
@@ -428,7 +433,7 @@ class PlotEngine:
             self.lines[self.tf]["lines"][url] = y
             self.has_updated = True
 
-        self.line_args["color"] = self._.Config.PLOT_AXHLINE_COLOR
+        self.line_args["color"] = self._.config.PLOT_AXHLINE_COLOR
         line = axes.axhline(y, url=url, **self.line_args)
         self.lines["artists"].append(line)
 
@@ -452,7 +457,7 @@ class PlotEngine:
             # draw line till end of x-axis
             x_max = df.index.get_loc(df.index[-1])
 
-        self.segment_args["colors"] = (self._.Config.PLOT_HLINE_COLOR)
+        self.segment_args["colors"] = (self._.config.PLOT_HLINE_COLOR)
         line = axes.hlines(y, x_min, x_max, url=url, **self.segment_args)
         self.lines["artists"].append(line)
 
@@ -470,7 +475,7 @@ class PlotEngine:
             )
             self.has_updated = True
 
-        self.line_args["color"] = self._.Config.PLOT_TLINE_COLOR
+        self.line_args["color"] = self._.config.PLOT_TLINE_COLOR
         # Second click to get ending coordinates
         line = axes.axline(*coords, url=url, **self.line_args)
         self.lines["artists"].append(line)
@@ -489,7 +494,7 @@ class PlotEngine:
             )
             self.has_updated = True
 
-        self.segment_args["colors"] = (self._.Config.PLOT_ALINE_COLOR,)
+        self.segment_args["colors"] = (self._.config.PLOT_ALINE_COLOR,)
         line = LineCollection([coords], url=url, **self.segment_args)
         axes.add_collection(line)
         self.lines["artists"].extend(line)
@@ -572,7 +577,7 @@ class PlotEngine:
         x = round(event.xdata)
         y: object = round(event.ydata, 2)
 
-        if self._.Config.MAGNET_MODE:
+        if self._.config.MAGNET_MODE:
             y = self._get_closest_price(x, y)
         if event.key is None:
             self._add_hline(event.inaxes, y)
@@ -646,13 +651,13 @@ class PlotEngine:
             return
         _open, _high, _low, _close, *_ = df.iloc[x]
         if y >= _high:
-            # if pointer is at or above high snap to high
+            # if a pointer is at or above, high snap to high
             closest = _high
         elif y <= _low:
-            # if pointer is at or below low snap to low
+            # if a pointer is at or below, low snap to low
             closest = _low
         else:
-            # else if pointer is inside the candle and
+            # else if a pointer is inside the candle and
             # snap to the nearest open or close (absolute distance)
             o_dist = abs(_open - y)
             c_dist = abs(_close - y)
@@ -674,7 +679,7 @@ class PlotEngine:
         df = self._.csv_tradings(f_path).get_data_frame(
             tf=self.tf,
             period=self.max_period,
-            toDate=self.args.date
+            to_date=self.args.date
         )
         # Step 3. calculate indicators
         df_len = df.shape[0]
@@ -684,8 +689,8 @@ class PlotEngine:
             df["RS"] = Utils.relative_strength(df["Close"], self.idx_cl)
         # Step 3.b. calculate mansfield relative strength
         if self.args.m_rs:
-            rs_period = self._.Config.PLOT_M_RS_LEN_W if self.tf == "weekly" else self._.Config.PLOT_M_RS_LEN_D
-            # check: prevent crash if plot period is less than RS period
+            rs_period = self._.config.PLOT_M_RS_LEN_W if self.tf == "weekly" else self._.config.PLOT_M_RS_LEN_D
+            # check: prevent crash if local period is less than RS period
             if df_len < rs_period:
                 print(f"WARN: {symbol.upper()} - Inadequate data to plot Mansfield RS. less than {rs_period} candles")
             df["M_RS"] = Utils.mansfield_relative_strength(df["Close"], self.idx_cl, rs_period)
@@ -736,26 +741,26 @@ class PlotEngine:
                 "linewidths": 0.7,
             }
         # Step 3. draw Plot
-        # Step 3.a. draw Dorsey Relative Strength plot
+        # Step 3.a. draw Dorsey Relative Strength local
         if self.args.rs:
             added_plots.append(
                 mpl.make_addplot(
                     data=df["RS"], panel=1, ylabel="Dorsey RS",
-                    color=self._.Config.PLOT_RS_COLOR, width=2.5
+                    color=self._.config.PLOT_RS_COLOR, width=2.5
                 )
             )
-        # Step 3.b. draw Mansfield Relative Strength plot
+        # Step 3.b. draw Mansfield Relative Strength local
         if self.args.m_rs and "M_RS" in df.columns:
             zero_line = pd.Series(data=0, index=df.index)
             added_plots.extend(
                 [
                     mpl.make_addplot(
                         data=df["M_RS"], panel="lower", ylabel="Mansfield RS",
-                        color=self._.Config.PLOT_M_RS_COLOR, width=2.5
+                        color=self._.config.PLOT_M_RS_COLOR, width=2.5
                     ),
                     mpl.make_addplot(
                         data=zero_line, panel="lower", linestyle="dashed",
-                        color=self._.Config.PLOT_M_RS_COLOR, width=1.5),
+                        color=self._.config.PLOT_M_RS_COLOR, width=1.5),
                 ]
             )
         # Step 3.c. draw simple moving average
@@ -783,7 +788,7 @@ class PlotEngine:
                 )
         # Step 3.f. draw delivery levels
         if self.args.dlv and not df["DLV_QTY"].dropna().empty:
-            Utils.get_delivery_levels(df, self._.Config)
+            Utils.get_delivery_levels(df, self._.config)
 
             self.plot_args["marketcolor_overrides"] = df["MCOverrides"].values
 
@@ -801,9 +806,9 @@ class PlotEngine:
 
     def _get_max_period(self):
         if self.tf == "Weekly":
-            return self._.Config.PLOT_WEEKS
+            return self._.config.PLOT_WEEKS
         else:
-            return self._.Config.PLOT_DAYS
+            return self._.config.PLOT_DAYS
 
     def _get_tick_locations(self, tick_mdates, dtix: pd.DatetimeIndex):
         """Return the tick locations to be passed to Locator instance."""

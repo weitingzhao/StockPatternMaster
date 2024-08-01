@@ -2,7 +2,8 @@ from typing import Literal, Optional
 from pathlib import Path
 import matplotlib.pyplot as plt
 import mplfinance as mpf
-import src.engines.loaders as loader
+
+from src.analyses.treading.loader.abstract_loader import AbstractLoader
 
 
 class Plotter:
@@ -13,7 +14,7 @@ class Plotter:
     def __init__(
         self,
         data,
-        loader: loader.AbstractLoader,
+        loader: AbstractLoader,
         save_folder: Optional[Path] = None,
         mode: Literal["default", "expand"] = "default",
     ):
@@ -57,7 +58,7 @@ class Plotter:
         assert isinstance(self.save_folder, Path)
 
         sym = dct["sym"].upper()
-        pattern = dct["pattern"]
+        pattern = dct["patterns"]
         lines = dct["lines"]
 
         df = self.loader.get(sym)
@@ -102,7 +103,7 @@ class Plotter:
 
         dct = self.data[self.idx]
         sym = dct["sym"].upper()
-        pattern = dct["pattern"]
+        pattern = dct["patterns"]
         lines = dct["lines"]
 
         df = self.loader.get(sym)

@@ -10,7 +10,7 @@ import src as _
 from concurrent.futures import Future
 
 # Instance
-key_list = _.engine.Pattern_List()
+key_list = _.engine.pattern_list()
 
 # Parse CLI arguments
 parser = ArgumentParser(
@@ -22,35 +22,35 @@ parser.add_argument("-c", "--config", type=lambda x: Path(x).expanduser().resolv
 parser.add_argument("-d", "--date", type=datetime.fromisoformat, metavar="str",
                     help="ISO format date YYYY-MM-DD.")
 parser.add_argument("--tf", action="store", help="Timeframe string.")
-parser.add_argument("-p", "--pattern", type=str, metavar="str", choices=key_list,
-                    help=f"String pattern. One of {', '.join(key_list)}")
+parser.add_argument("-p", "--patterns", type=str, metavar="str", choices=key_list,
+                    help=f"String patterns. One of {', '.join(key_list)}")
 parser.add_argument("-l", "--left", type=int, metavar="int", default=6,
                     help="Number of candles on left side of pivot")
 parser.add_argument("-r", "--right", type=int, metavar="int", default=6,
                     help="Number of candles on right side of pivot")
 parser.add_argument("--save", type=Path, nargs="?", const=_.instance.FOLDER_Images,
                     help="Specify the save directory")
-parser.add_argument("--idx", type=int, default=0, help="Index to plot")
+parser.add_argument("--idx", type=int, default=0, help="Index to local")
 parser.add_argument("-v", "--version", action="store_true", help="Print the current version.")
 
 # Parser Group
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-f", "--file", type=lambda x: Path(x).expanduser().resolve(),
                    default=None, metavar="filepath", help="File containing list of stocks. One on each line")
-group.add_argument("--plot", type=lambda x: Path(x).expanduser().resolve(),
+group.add_argument("--local", type=lambda x: Path(x).expanduser().resolve(),
                    default=None, help="Plot results from json file")
 group.add_argument("-my", "--mylist", nargs="+", metavar="SYM",
                    help="Space separated list of stock symbols.")
 group.add_argument("-sec", "--sector", type=str, nargs='+',
-                   help="Fetch trading history for symbols in the specified sectors.")
+                   help="Fetch fetching treading for symbols in the specified sectors.")
 group.add_argument("-ind", "--industry", type=str, nargs='+',
-                   help="Fetch trading history for symbols in the specified industries.")
+                   help="Fetch fetching treading for symbols in the specified industries.")
 # check "config"
 if "-c" in sys.argv or "--config" in sys.argv:
     idx = sys.argv.index("-c" if "-c" in sys.argv else "--config")
     CONFIG_PATH = Path(sys.argv[idx + 1]).expanduser().resolve()
 else:
-    CONFIG_PATH = _.instance.Config.FILE_user
+    CONFIG_PATH = _.instance.config.FILE_user
 
 if CONFIG_PATH.exists():
     config = json.loads(CONFIG_PATH.read_bytes())
@@ -78,7 +78,7 @@ args = parser.parse_args()
 if args.version:
     exit(
         f"""
-    Stock-Pattern Master | Version {_.instance.Config.VERSION}
+    Stock-Pattern Master | Version {_.instance.config.VERSION}
     Copyright (C) 2024 Vision Zhao
 
     Github: https://github.com/weitingzhao/StockPatternMaster
@@ -95,11 +95,11 @@ if args.version:
 # loader_name = config.get("LOADER", "treading_data_loader:TreadingDataLoader")
 # module_name, class_name = loader_name.split(":")
 # # Dynamically import the module
-# loader_module = importlib.import_module(f"src.loaders.{module_name}")
+# loader_module = importlib.import_module(f"src.tire2.{module_name}")
 #
 # # Plot
-# if args.plot:
-#     symbol_list = json.loads(args.plot.read_bytes())
+# if args.local:
+#     symbol_list = json.loads(args.local.read_bytes())
 #     # Last item contains meta data about the timeframe used, end_date etc
 #     meta = symbol_list.pop()
 #     end_date = None
@@ -111,17 +111,17 @@ if args.version:
 #         tf=meta["timeframe"],
 #         end_date=end_date)
 #     plotter = _.Plot(symbol_list, loader)
-#     plotter.plot(args.idx)
+#     plotter.local(args.idx)
 #     cleanup(loader, futures)
 #     exit()
 
 def get_user_input() -> str:
     user_input = input("""
-    Enter a number to select a pattern.
+    Enter a number to select a patterns.
     0. ALL  - Scan all patterns
     1: BULL - All Bullish patterns
     2: BEAR - All Bearish patterns
-    3. VCPU - Bullish VCP (Volatility Contraction pattern)
+    3. VCPU - Bullish VCP (Volatility Contraction patterns)
     4. VCPD - Bearish VCP
     5. DBOT - Double Bottom (Bullish)
     6. DTOP - Double Top (Bearish)
@@ -146,7 +146,7 @@ def load_symbols(file_name: str, arg_param: List[str]):
     _.instance.logger.info(f"Fetching symbols by {file_name}: {args.sector}")
 
 
-# -p --pattern
+# -p --patterns
 if args.pattern:
     key: str = args.pattern
 else:
@@ -159,12 +159,12 @@ else:
 
 ##--------------------------##
 # Initialize Scaner
-scaner = _.engine.Pattern_Scan(args)
+scaner = _.analyse.treading(args)
 _.logger.info(f"Scanning `{key.upper()}` patterns on `{scaner.loader.timeframe}`. Press Ctrl - C to exit")
 
 # Prepare symbol list and futures result
 symbol_list = []
-# Level 2. Main daily step, based on symbols pull daily trading history data.
+# Level 2. Main daily step, based on symbols pull daily fetching treading data.
 if args.file:
     symbol_list = args.file.read_text().strip().split("\n")[1:]
 if args.mylist:
@@ -185,11 +185,11 @@ if sym_list is not None and not (
         or "--sym" in sys.argv
         or "-v" in sys.argv
         or "--version" in sys.argv
-        or "--plot" in sys.argv
+        or "--local" in sys.argv
 ):
     sys.argv.extend(("-f", sym_list))
 
-# Process by pattern
+# Process by patterns
 futures: List[concurrent.futures.Future] = []
 patterns = scaner.process_by_pattern_name(symbol_list, key, futures)
 print(f"patterns:{patterns}")

@@ -1,32 +1,54 @@
-import io
 import os
+import io
 import pandas as pd
 from pathlib import Path
-from pandas import DataFrame
+from src.engine import Engine
+from typing import Optional, Any
+from src.services.base_service import BaseService
 from datetime import datetime, timezone, timedelta
-from typing import Any, Optional
 
 
-class CsvLoader:
-    def __init__(self, path: Path):
+class LoadingTradingService(BaseService):
+
+    def __init__(self, engine: Engine, path: Path):
+        super().__init__(engine)
         self.Path = path
-        if not self.Path.exists():
-            # Create any necessary parent directories
-            self.Path.parent.mkdir(parents=True, exist_ok=True)
-            # Create the file
-            self.Path.touch()
 
-    def save_str(self, data: str):
-        df = pd.read_csv(io.StringIO(data), header=None)  # Create DataFrame
-        df.to_csv(self.Path, index=True, header=True)  # Save to CSV
-
-    def save_df(self, df: DataFrame):
-        df.to_csv(self.Path, index=True, header=True)  # Save to CSV
-
-    def load(
+    def get_data_frame(
             self,
-            period=160, end_date: Optional[datetime] = None, chunk_size=1024 * 6
-    ) -> pd.DataFrame:
+            tf: str,
+            period: int,
+            column: Optional[str] = None,
+            to_date: Optional[datetime] = None
+    ) -> Any:
+        candle_count = period * 5 if tf == "weekly" else period
+        # Load the data frame
+        df = self.load_symbol_history(period=candle_count, end_date=to_date)
+
+        # Resample the data frame
+        dct: dict = {
+            "Open": "first",
+            "High": "max",
+            "Low": "min",
+            "Close": "last",
+            "Volume": "sum",
+        }
+
+        # Reformat the index from Datetime offset to Date
+        df.index = df.index.map(lambda x: x.date())
+        df.index = pd.to_datetime(df.index)
+
+        if tf == "weekly":
+            return df[column].resample("W").apply(dct[column])[-period:] \
+                if column else df.resample("W").apply(dct)[-period:]
+        return df[-period:] if column is None else df[column][-period:]
+
+    def load_symbol_history(
+            self,
+            period=160,
+            end_date: Optional[datetime] = None,
+            chunk_size=1024 * 6
+    ) -> pd.DataFrame | None:
         def get_date(start, chunk) -> datetime:
             end = chunk.find(b",", start)
             date_str = chunk[start:end].decode()
@@ -71,7 +93,7 @@ class CsvLoader:
                 # From the current position read n bytes
                 chunk = f.read(read_size)
                 if end_date:
-                    # First line in a chunk may not be complete line
+                    # The First line in a chunk may not be complete line
                     # So skip the first line and parse the first date in chunk
                     newline_index = chunk.find(b"\n")
                     start = newline_index + 1
@@ -91,19 +113,19 @@ class CsvLoader:
                         prev_chunk_start_line = chunk[: chunk.find(b"\n")]
                 else:
                     if curr_pos == size:
-                        # On first chunk, get the last date to calculate start_date
+                        # On the first chunk, get the last date to calculate start_date
                         last_newline_index = chunk[:-1].rfind(b"\n")
                         start = last_newline_index + 1
                         last_dt = get_date(start, chunk)
                         start_date = last_dt - pd.offsets.BDay(period + holiday_offset)
-                    # First line may not be a complete line.
+                    # The First line may not be a complete line.
                     # To skip this line, find the first newline character
                     newline_index = chunk.find(b"\n")
                     start = newline_index + 1
                     try:
                         current_dt = get_date(start, chunk)
                     except ValueError:
-                        # reached start of file. No valid date to parse
+                        # Reached start of the file. No valid date to parse
                         chunks_read.append(chunk)
                         break
                     if start_date is None:
@@ -113,7 +135,7 @@ class CsvLoader:
                         # and append to list
                         chunks_read.append(columns + chunk[start:])
                         break
-                    # we are storing the chunks in bottom first order.
+                    # We are storing the chunks in bottom first order.
                     # This has to be corrected later by reversing the list
                     chunks_read.append(chunk)
                 curr_pos -= read_size
@@ -132,31 +154,4 @@ class CsvLoader:
         df.set_index("Date", inplace=True)
         return df.loc[:end_date].iloc[-period:] if end_date else df.iloc[-period:]
 
-    def get_data_frame(
-            self,
-            tf: str,
-            period: int,
-            column: Optional[str] = None,
-            toDate: Optional[datetime] = None
-    ) -> Any:
-        candle_count = period * 5 if tf == "weekly" else period
-        # Load the data frame
-        df = self.load(period=candle_count, end_date=toDate)
 
-        # Resample the data frame
-        dct: dict = {
-            "Open": "first",
-            "High": "max",
-            "Low": "min",
-            "Close": "last",
-            "Volume": "sum",
-        }
-
-        # Reformat the index from Datetimeoffset to Date
-        df.index = df.index.map(lambda x: x.date())
-        df.index = pd.to_datetime(df.index)
-
-        if tf == "weekly":
-            return df[column].resample("W").apply(dct[column])[-period:] \
-                if column else df.resample("W").apply(dct)[-period:]
-        return df[-period:] if column is None else df[column][-period:]
