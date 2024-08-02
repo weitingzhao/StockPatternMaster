@@ -21,7 +21,7 @@ class Engine(BaseEngine):
     def json_research(self, *args):
         return self.json(root=self.Config.ROOT_Research, *args)
 
-    def json_config(self):
+    def json_user(self):
         return self.json(root=self.Config.FILE_user)
 
     def json(self, root: Path, *args):

@@ -15,3 +15,7 @@ class Service(BaseService):
     # load data from local storage
     def loading(self) -> service.LoadingService:
         return service.LoadingService(self.Engine)
+
+    # save data to local storage
+    def saving(self) -> service.SavingService:
+        return service.SavingService(self.Engine)

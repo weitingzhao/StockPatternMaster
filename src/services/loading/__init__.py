@@ -1,1 +1,1 @@
-from .loading_services import LoadingService
+from .loading_service import LoadingService

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
-import src.analyses as analyse
 from src.service import Service
+import src.analyses as analyse
 from src.analyses.base_analyse import BaseAnalyse
 
 

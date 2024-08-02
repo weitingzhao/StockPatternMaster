@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-import src as _
+from src.instance import Instance
 
 # Group Init
 parser = ArgumentParser(prog="init_data.py")
@@ -26,40 +26,41 @@ group.add_argument("-ind", "--industry", type=str, nargs='+',
                    help="Fetch fetching treading for symbols in the specified industries.")
 
 args = parser.parse_args()
-
 # Parse the arguments
 period = args.period if args.period else "1d"
+# Create Instance
+_ = Instance()
 
 if args.version:
-    exit(f"Stock Pattern Master - init_data.py: version {_.instance.config.VERSION}")
+    exit(f"Stock Pattern Master - init_data.py: version {_.Config.VERSION}")
 if args.config:
-    exit(str(_.instance.config))
+    exit(str(_.Config))
 # each lower level need base on upper level's result
 
 # Level 0. Fetch
 # level 0.a NYSE & NASDAQ vehicle [symbol list] from alphavantage
 if args.fetch:
-    _.engine.Symbol().fetch_stock_info_to_db()
+    _.Engine.Symbol().fetch_stock_info_to_db()
 # level 0.b Base on full symbols csv file pull all vehicle [info] from exchange.
 if args.info:
-    _.engine.Trading().fetch_symbols_info()
+    _.Engine.Trading().fetch_symbols_info()
 
 # Level 1. Analysis, full stock symbols and each symbol's info does analyses.
 if args.analysis:
-    _.engine.Symbol().analyze_symbols_full_list()
+    _.Engine.Symbol().analyze_symbols_full_list()
 
 # Level 2. Main daily step, based on symbols pull daily fetching treading data.
 if args.mylist:
-    _.engine.Trading().fetch_history_by_mylist(period=period)
+    _.Engine.Trading().fetch_history_by_mylist(period=period)
 if args.sector:
-    _.instance.logger.info(f"Fetching symbols by sector: {args.sector}")
-    _.engine.Trading().fetch_history_by_sector_or_industry(
+    _.Logger.info(f"Fetching symbols by sector: {args.sector}")
+    _.Engine.Trading().fetch_history_by_sector_or_industry(
         category="sector",
         category_names=args.sector,
         period=period)
 if args.industry:
-    _.instance.logger.info(f"Fetching symbols by industry: {args.industry}")
-    _.engine.Trading().fetch_history_by_sector_or_industry(
+    _.Logger.info(f"Fetching symbols by industry: {args.industry}")
+    _.Engine.Trading().fetch_history_by_sector_or_industry(
         category="industry",
         category_names=args.industry,
         period=period)

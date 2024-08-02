@@ -1,6 +1,6 @@
 from src import Engine
-from fetching_symbol_service import FetchingSymbolService
-from fetching_trading_service import FetchingTradingService
+from .fetching_symbol_service import FetchingSymbolService
+from .fetching_trading_service import FetchingTradingService
 
 
 class FetchingService:

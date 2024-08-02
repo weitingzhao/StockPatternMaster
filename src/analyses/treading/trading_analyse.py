@@ -7,7 +7,6 @@ from datetime import datetime
 from argparse import ArgumentParser
 from concurrent.futures import Future
 from src.service import Service
-from src.charts.local.Plotter import Plotter
 from src.analyses.base_analyse import BaseAnalyse
 from typing import Tuple, Callable, List, Optional
 from src.analyses.treading.loader.abstract_loader import AbstractLoader
@@ -185,7 +184,7 @@ class TradingAnalyse(BaseAnalyse):
                 return []
             # Save the images if required
             if save_folder:
-                plotter = Plotter(
+                plotter = self.Service.saving().plot_trading(
                     data=None,
                     loader=self.loader,
                     save_folder=save_folder)

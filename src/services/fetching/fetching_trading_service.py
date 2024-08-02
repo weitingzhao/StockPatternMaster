@@ -24,7 +24,7 @@ class FetchingTradingService(BaseService):
                     # get ticker object
                     ticker = tickers.tickers[ticker_symbol]
                     # Save the treading to a csv file
-                    history = ticker.history(period=period)
+                    history = ticker.plot_trading(period=period)
                     self.Engine.csv("daily", f"{ticker_symbol}.csv").save_df(history)
                 except Exception as e:
                     self.Logger.error(f"Error: fetch {ticker_symbol} trading history - got Error:{e}")

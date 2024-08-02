@@ -39,7 +39,7 @@ parser.add_argument("--vol-sma", type=int, nargs="+", metavar="int", help="Volum
 parser.add_argument("-d", "--date", type=datetime.fromisoformat, metavar="str",
                     help="ISO format date YYYY-MM-DD.")
 parser.add_argument("--period", action="store", type=int, metavar="int",
-                    help=f"Number of Candles to local. Default {instance.config.PLOT_DAYS}")
+                    help=f"Number of Candles to local. Default {instance.Config.PLOT_DAYS}")
 parser.add_argument("--snr", action="store_true",help="Add Support and Resistance lines on chart")
 parser.add_argument("-r", "--resume", action="store_true",
                     help="Resume a watchlist from last viewed chart.")
@@ -74,8 +74,8 @@ plotter.idx = 0
 plotter.len = len(symbol_list)
 answer = "n"
 
-if args.resume and hasattr(instance.config, "PLOT_RESUME"):
-    resume = getattr(instance.config, "PLOT_RESUME")
+if args.resume and hasattr(instance.Config, "PLOT_RESUME"):
+    resume = getattr(instance.Config, "PLOT_RESUME")
     if resume["watch"] == args.watch:
         plotter.idx = resume["idx"]
 

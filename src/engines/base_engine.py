@@ -1,13 +1,15 @@
 import json
 import time
-from src import Config
 from pathlib import Path
+from src.config import Config
+from src.utilities import Tools
 
 
 class BaseEngine:
     def __init__(self, config: Config):
         self.Config = config
         self.Logger = self.Config.logger
+        self.Tools = Tools(config.logger)
 
     def path_exist(self, path: Path) -> Path:
         return self.Config.path_exist(path)
