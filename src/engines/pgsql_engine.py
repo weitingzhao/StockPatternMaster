@@ -32,5 +32,10 @@ class PgSqlEngine(BaseEngine):
         with self.db_conn.cursor() as cursor:
             insert_query = psycopg2.sql.SQL(sql_query)
             for _, row in df_source.iterrows():
-                cursor.execute(insert_query, execute_func(_, row))
+                result = ()
+                try:
+                    result = execute_func(_, row)
+                    cursor.execute(insert_query, result)
+                except Exception as e:
+                    print(f"Error: {e}")
                 self.db_conn.commit()

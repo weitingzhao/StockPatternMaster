@@ -1,7 +1,7 @@
 import json
 import io
 import pandas as pd
-from pandas import Series
+from pandas import Series, Timestamp
 from typing import List, Hashable
 import yfinance as yf
 from tqdm import tqdm
@@ -23,6 +23,12 @@ def asset_type(asset_type: str) -> int:
         return -1
 
 
+def DATE2(value: str) -> object | Timestamp | Timestamp:
+    if pd.isna(value):
+        return None
+    return pd.to_datetime(value)
+
+
 class FetchingSymbolService(BaseService):
 
     def __init__(self, engine: Engine):
@@ -31,11 +37,16 @@ class FetchingSymbolService(BaseService):
 
     def fetch_stock_info_to_db(self):
 
-        url = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={self.API_KEY}'
-        data = self._engine.web(url).request()
+        # url = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={self.API_KEY}'
+        # data = self._engine.web(url).request()
+
+        df_source = pd.read_csv(self._config.FOLDER_Symbols / "FullSymbols.csv")
 
         # symbol data
-        df_source = pd.read_csv(io.StringIO(data), header=None)  # Create DataFrame
+        # df_source = pd.read_csv(io.StringIO(data))  # Create DataFrame
+        # df_source["ipoDate"] = pd.to_datetime(df_source['ipoDate'], errors='coerce')
+        # df_source["delistingDate"] = pd.to_datetime(df_source['delistingDate'], errors='coerce')
+
         # sql query
         sql_query = """
                         INSERT INTO symbol (symbol, name, market, asset_type, ipo_date, delisting_date, status)
@@ -52,13 +63,13 @@ class FetchingSymbolService(BaseService):
         # insert function
         def insert_fn(_: Hashable, row: Series):
             return (
-                row['symbol'],
-                row['name'],
-                row['market'],
-                asset_type(row['asset_type']),
-                row['ipo_date'],
-                row['delisting_date'],
-                row['status'] == "Active"
+                row.get('symbol', default="null"),
+                row.get('name', default="null"),
+                row.get('exchange', default="null"),
+                asset_type(row.get('assetType', default="NULL")),
+                DATE2(row.get('ipoDate')),
+                DATE2(row.get('delistingDate')),
+                row['status'] == "Active",
             )
 
         self._engine.db().save_df(
