@@ -5,14 +5,14 @@ class Instance:
 
     def __init__(self):
         # Step 1. Init Config
-        self.Config = src.Config()
-        self.Logger: src.Logger = self.Config.logger
-        self.Tools: src.Tools = src.Tools(self.Config.logger)
+        self._config = src.Config()
+        self._logger: src.Logger = self._config.logger
+        self._tools: src.Tools = src.Tools(self._config.logger)
         # tier 2. Base on Config init Engine
-        self.Engine = src.Engine(self.Config)
+        self._engine = src.Engine(self._config)
         # Step 3. Base on Engine init Service
-        self.Service = src.Service(self.Engine)
+        self._service = src.Service(self._engine)
         # Step 4. Base on Service init Analyze
-        self.Analyse = src.Analyse(self.Service)
+        self._analyse = src.Analyse(self._service)
         # Step 5. Base on Analyze init Chart
-        self.Chart = src.Chart(self.Analyse)
+        self._chart = src.Chart(self._analyse)

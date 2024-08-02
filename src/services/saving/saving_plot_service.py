@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 from src.engine import Engine
 from src.services.base_service import BaseService
-from src.analyses.treading.loader.abstract_loader import AbstractLoader
+from src.services.loading.loader.abstract_loader import AbstractLoader
 
 
 class SavingPlotService(BaseService):

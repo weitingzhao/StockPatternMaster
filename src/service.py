@@ -10,12 +10,12 @@ class Service(BaseService):
 
     # pull data from external data vendor
     def fetching(self) -> service.FetchingService:
-        return service.FetchingService(self.Engine)
+        return service.FetchingService(self._engine)
 
     # load data from local storage
     def loading(self) -> service.LoadingService:
-        return service.LoadingService(self.Engine)
+        return service.LoadingService(self._engine)
 
     # save data to local storage
     def saving(self) -> service.SavingService:
-        return service.SavingService(self.Engine)
+        return service.SavingService(self._engine)

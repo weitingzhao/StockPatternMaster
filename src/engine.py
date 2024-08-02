@@ -10,28 +10,28 @@ class Engine(BaseEngine):
         super().__init__(config)
 
     def web(self, url: str) -> engine.WebEngine:
-        return engine.WebEngine(self.Config, url)
+        return engine.WebEngine(self._config, url)
 
     def db(self) -> engine.PgSqlEngine:
-        return engine.PgSqlEngine(self.Config)
+        return engine.PgSqlEngine(self._config)
 
     def json_data(self, *args):
-        return self.json(root=self.Config.ROOT_Data, *args)
+        return self.json(root=self._config.ROOT_Data, *args)
 
     def json_research(self, *args):
-        return self.json(root=self.Config.ROOT_Research, *args)
+        return self.json(root=self._config.ROOT_Research, *args)
 
     def json_user(self):
-        return self.json(root=self.Config.FILE_user)
+        return self.json(root=self._config.FILE_user)
 
     def json(self, root: Path, *args):
         path = self.path_exist(root.joinpath(*args))
-        return engine.JsonEngine(self.Config, path)
+        return engine.JsonEngine(self._config, path)
 
     def csv(self, *args) -> engine.CsvEngine:
-        path = self.Config.ROOT_Data.joinpath(*args)
+        path = self._config.ROOT_Data.joinpath(*args)
         self.path_exist(path)
-        return engine.CsvEngine(self.Config, path)
+        return engine.CsvEngine(self._config, path)
 
     def plugin(self) -> util.Plugin:
         return util.Plugin()

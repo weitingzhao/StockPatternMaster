@@ -54,7 +54,7 @@ if "-c" in sys.argv or "--config" in sys.argv:
     idx = sys.argv.index("-c" if "-c" in sys.argv else "--config")
     CONFIG_PATH = Path(sys.argv[idx + 1]).expanduser().resolve()
 else:
-    CONFIG_PATH = instance.Config.FILE_user
+    CONFIG_PATH = instance._config.FILE_user
 
 if CONFIG_PATH.exists():
     config = json.loads(CONFIG_PATH.read_bytes())

@@ -27,12 +27,12 @@ class FetchingSymbolService(BaseService):
 
     def __init__(self, engine: Engine):
         super().__init__(engine)
-        self.API_KEY = self.Config.API_KEY_Alphavantage
+        self.API_KEY = self._config.API_KEY_Alphavantage
 
     def fetch_stock_info_to_db(self):
 
         url = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={self.API_KEY}'
-        data = self.Engine.web(url).request()
+        data = self._engine.web(url).request()
 
         # symbol data
         df_source = pd.read_csv(io.StringIO(data), header=None)  # Create DataFrame
@@ -61,21 +61,21 @@ class FetchingSymbolService(BaseService):
                 row['status'] == "Active"
             )
 
-        self.Engine.db().save_df(
+        self._engine.db().save_df(
             sql_query=sql_query,
             df_source=df_source,
             execute_func=insert_fn
         )
 
     def fetch_symbols_info(self):
-        full_symbols = pd.read_csv(self.Config.FOLDER_Symbols / "FullSymbols.csv")
+        full_symbols = pd.read_csv(self._config.FOLDER_Symbols / "FullSymbols.csv")
         full_symbols["symbol"] = full_symbols["symbol"].astype(str)
         symbols = full_symbols["symbol"].tolist()
         # symbols = ["BC","BC/PA"]
         symbols_str = " ".join(symbols)
         tickers = yf.Tickers(symbols_str)
 
-        error_path = self.path_exist(self.Config.FILE_Infos_Errors)
+        error_path = self.path_exist(self._config.FILE_Infos_Errors)
         if error_path.exists():
             with open(error_path.resolve(), "w"):
                 pass

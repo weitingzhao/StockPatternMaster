@@ -12,7 +12,7 @@ class SymbolAnalyse(BaseAnalyse):
 
     def analyze_symbols_full_list(self):
         # Load the stock list
-        pd_symbols = pd.read_csv(self.Config.FOLDER_Symbols / "FullSymbols.csv")
+        pd_symbols = pd.read_csv(self._config.FOLDER_Symbols / "FullSymbols.csv")
 
         # step 1. Filter by status
         pd_active_symbols = pd_symbols[pd_symbols['status'] == 'Active']
@@ -29,7 +29,7 @@ class SymbolAnalyse(BaseAnalyse):
         for name, group in pd_grouped_list.items():
             exchange = name[0]
             derivative = name[1]
-            csv = self.Engine.csv("symbols", "exchange", exchange, f"{derivative}.csv")
+            csv = self._engine.csv("symbols", "exchange", exchange, f"{derivative}.csv")
             csv.save_df(group)
 
             # Collect json_symbols information
@@ -43,15 +43,15 @@ class SymbolAnalyse(BaseAnalyse):
                 json_symbols['count'][derivative] = 0
             json_symbols['count'][derivative] += total
         # Category 1.b Symbols json_symbols
-        self.Engine.json_research("watch", "symbols_summary.json").save(json_symbols)
+        self._engine.json_research("watch", "symbols_summary.json").save(json_symbols)
 
         # Category 2. Equity by Sector & Industry
-        json_file_sector = self.path_exist(self.Config.FOLDER_Watch / "symbols_sector.json")
-        json_file_industry = self.path_exist(self.Config.FOLDER_Watch / "symbols_industry.json")
+        json_file_sector = self.path_exist(self._config.FOLDER_Watch / "symbols_sector.json")
+        json_file_industry = self.path_exist(self._config.FOLDER_Watch / "symbols_industry.json")
 
         json_symbols_sector = {}
         json_symbols_industry = {}
-        for json_file in (self.Config.FOLDER_Infos / "EQUITY").glob("*.json"):
+        for json_file in (self._config.FOLDER_Infos / "EQUITY").glob("*.json"):
             with (open(json_file, "r")) as file:
                 data = json.load(file)
                 sector = data.get("sector", "Unknown")
@@ -79,7 +79,7 @@ class SymbolAnalyse(BaseAnalyse):
             }, json_file, ensure_ascii=False, indent=4)
 
     def analyse_stock_symbols(self) -> List[str]:
-        json_file_path = self.Config.FOLDER_Watch / "symbols_sector.json"
+        json_file_path = self._config.FOLDER_Watch / "symbols_sector.json"
         with open(json_file_path, "r", encoding='utf-8') as json_file:
             data = json.load(json_file)
             symbols_sector = data.get("detail", {})

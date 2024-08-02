@@ -16,5 +16,5 @@ class WebEngine(BaseEngine):
         if response.status_code == 200:
             return response.text
         else:
-            self.Logger.error(f"Error fetching data: {response.status_code}")
+            self._logger.error(f"Error fetching data: {response.status_code}")
             return None

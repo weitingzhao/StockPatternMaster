@@ -3,7 +3,7 @@ from typing import Optional, Literal
 
 from src import Engine
 from .saving_plot_service import SavingPlotService
-from src.analyses.treading.loader.abstract_loader import AbstractLoader
+from src.services.loading.loader.abstract_loader import AbstractLoader
 
 
 class SavingService:

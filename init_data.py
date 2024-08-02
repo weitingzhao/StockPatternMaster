@@ -32,35 +32,35 @@ period = args.period if args.period else "1d"
 _ = Instance()
 
 if args.version:
-    exit(f"Stock Pattern Master - init_data.py: version {_.Config.VERSION}")
+    exit(f"Stock Pattern Master - init_data.py: version {_._config.VERSION}")
 if args.config:
-    exit(str(_.Config))
+    exit(str(_._config))
 # each lower level need base on upper level's result
 
 # Level 0. Fetch
 # level 0.a NYSE & NASDAQ vehicle [symbol list] from alphavantage
 if args.fetch:
-    _.Engine.Symbol().fetch_stock_info_to_db()
+    _._service.fetching().symbol().fetch_stock_info_to_db()
 # level 0.b Base on full symbols csv file pull all vehicle [info] from exchange.
 if args.info:
-    _.Engine.Trading().fetch_symbols_info()
+    _._engine.Trading().fetch_symbols_info()
 
 # Level 1. Analysis, full stock symbols and each symbol's info does analyses.
 if args.analysis:
-    _.Engine.Symbol().analyze_symbols_full_list()
+    _._engine.Symbol().analyze_symbols_full_list()
 
 # Level 2. Main daily step, based on symbols pull daily fetching treading data.
 if args.mylist:
-    _.Engine.Trading().fetch_history_by_mylist(period=period)
+    _._engine.Trading().fetch_history_by_mylist(period=period)
 if args.sector:
-    _.Logger.info(f"Fetching symbols by sector: {args.sector}")
-    _.Engine.Trading().fetch_history_by_sector_or_industry(
+    _._logger.info(f"Fetching symbols by sector: {args.sector}")
+    _._engine.Trading().fetch_history_by_sector_or_industry(
         category="sector",
         category_names=args.sector,
         period=period)
 if args.industry:
-    _.Logger.info(f"Fetching symbols by industry: {args.industry}")
-    _.Engine.Trading().fetch_history_by_sector_or_industry(
+    _._logger.info(f"Fetching symbols by industry: {args.industry}")
+    _._engine.Trading().fetch_history_by_sector_or_industry(
         category="industry",
         category_names=args.industry,
         period=period)

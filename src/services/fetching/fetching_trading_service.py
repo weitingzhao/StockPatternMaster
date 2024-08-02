@@ -25,14 +25,14 @@ class FetchingTradingService(BaseService):
                     ticker = tickers.tickers[ticker_symbol]
                     # Save the treading to a csv file
                     history = ticker.plot_trading(period=period)
-                    self.Engine.csv("daily", f"{ticker_symbol}.csv").save_df(history)
+                    self._engine.csv("daily", f"{ticker_symbol}.csv").save_df(history)
                 except Exception as e:
-                    self.Logger.error(f"Error: fetch {ticker_symbol} trading history - got Error:{e}")
+                    self._logger.error(f"Error: fetch {ticker_symbol} trading history - got Error:{e}")
 
         # run main_process with logging
         self.logging_process_time(
             name,
-            logging_file_path=self.Config.FOLDER_Watch / "tradings_fetch_status.json",
+            logging_file_path=self._config.FOLDER_Watch / "tradings_fetch_status.json",
             method_to_run=main_process)
 
     def fetch_history_by_sector_or_industry(
@@ -41,7 +41,7 @@ class FetchingTradingService(BaseService):
             category_names: List[str],
             period="1d"):
         # get symbol list base on category (sector or industry)
-        json_file_path = self.Config.FOLDER_Watch / f"symbols_{category}.json"
+        json_file_path = self._config.FOLDER_Watch / f"symbols_{category}.json"
         with open(json_file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
 
@@ -59,5 +59,5 @@ class FetchingTradingService(BaseService):
             period="1d"):
         self.fetch_history(
             name="mylist",
-            symbols=self.Config.LIST_Watch,
+            symbols=self._config.LIST_Watch,
             period=period)

@@ -9,7 +9,7 @@ from concurrent.futures import Future
 from src.service import Service
 from src.analyses.base_analyse import BaseAnalyse
 from typing import Tuple, Callable, List, Optional
-from src.analyses.treading.loader.abstract_loader import AbstractLoader
+from src.services.loading.loader.abstract_loader import AbstractLoader
 import src.analyses.treading.patterns.pattern as Pattern
 from src.analyses.treading.patterns.method.pattern_detector import PatternDetector
 
@@ -20,14 +20,14 @@ class TradingAnalyse(BaseAnalyse):
         super().__init__(service)
         # Setup instance, args, etc.
         self.args: ArgumentParser = args
-        self.PatternDetector = PatternDetector(self.Logger)
+        self.PatternDetector = PatternDetector(self._logger)
 
         # Dynamically initialize the loader
-        loader_name = self.Config.__dict__.get("LOADER", "trading_csv_loader:TradingCsvLoader")
+        loader_name = self._config.__dict__.get("LOADER", "trading_csv_loader:TradingCsvLoader")
         module_name, class_name = loader_name.split(":")
-        loader_module = importlib.import_module(f"src.analyses.loader.{module_name}")
+        loader_module = importlib.import_module(f"src.services.loading.loader.{module_name}")
         self.loader = getattr(loader_module, class_name)(
-            config=self.Config.__dict__,
+            config=self._config.__dict__,
             tf=args.tf,
             end_date=args.date)
 
@@ -74,7 +74,7 @@ class TradingAnalyse(BaseAnalyse):
             try:
                 result = function(self.PatternDetector, symbol, df, pivots)
             except Exception as e:
-                self.Logger.exception(f"SYMBOL name: {symbol}", exc_info=e)
+                self._logger.exception(f"SYMBOL name: {symbol}", exc_info=e)
                 return patterns
             # add detected patterns into result
             if result:
@@ -94,8 +94,8 @@ class TradingAnalyse(BaseAnalyse):
         state_file = None
         filtered = None
 
-        if self.Config.__dict__.get("SAVE_STATE", False) and self.args.file and not self.args.date:
-            state_file = self.Config.FOLDER_States / f"{self.args.file.stem}_{self.args.pattern}.json"
+        if self._config.__dict__.get("SAVE_STATE", False) and self.args.file and not self.args.date:
+            state_file = self._config.FOLDER_States / f"{self.args.file.stem}_{self.args.pattern}.json"
             if not state_file.parent.is_dir():
                 state_file.parent.mkdir(parents=True)
             state = json.loads(state_file.read_bytes()) if state_file.exists() else {}
@@ -103,8 +103,8 @@ class TradingAnalyse(BaseAnalyse):
         # determine the folder to save to in a case save option is set
         save_folder: Optional[Path] = None
         image_folder = f"{datetime.now():%d_%b_%y_%H%M}"
-        if "SAVE_FOLDER" in self.Config.__dict__:
-            save_folder = Path(self.Config.__dict__["SAVE_FOLDER"]) / image_folder
+        if "SAVE_FOLDER" in self._config.__dict__:
+            save_folder = Path(self._config.__dict__["SAVE_FOLDER"]) / image_folder
         if self.args.save:
             save_folder = self.args.save / image_folder
         if save_folder and not save_folder.exists():
@@ -131,7 +131,7 @@ class TradingAnalyse(BaseAnalyse):
                     result = future.result()
                 except Exception as e:
                     self._cleanup(self.loader, futures)
-                    self.Logger.exception("Error in Future - scanning patterns", exc_info=e)
+                    self._logger.exception("Error in Future - scanning patterns", exc_info=e)
                     return []
                 patterns.extend(result)
             futures.clear()
@@ -175,7 +175,7 @@ class TradingAnalyse(BaseAnalyse):
                     state.pop(key)
                 if state_file:
                     state_file.write_text(json.dumps(state, indent=2))
-                    self.Logger.info(
+                    self._logger.info(
                         f"\nTo view all current market patterns, run `py init.py --plot state/{state_file.name}\n"
                     )
 
@@ -184,7 +184,7 @@ class TradingAnalyse(BaseAnalyse):
                 return []
             # Save the images if required
             if save_folder:
-                plotter = self.Service.saving().plot_trading(
+                plotter = self._service.saving().plot_trading(
                     data=None,
                     loader=self.loader,
                     save_folder=save_folder)
@@ -192,14 +192,14 @@ class TradingAnalyse(BaseAnalyse):
                     future = executor.submit(plotter.save, i.copy())
                     futures.append(future)
 
-                self.Logger.info("Saving images")
+                self._logger.info("Saving images")
 
                 for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
                     try:
                         future.result()
                     except Exception as e:
                         self._cleanup(self.loader, futures)
-                        self.Logger.exception("Error in Futures - Saving images ", exc_info=e)
+                        self._logger.exception("Error in Futures - Saving images ", exc_info=e)
                         return []
 
         patterns_to_output.append({
@@ -237,5 +237,5 @@ class TradingAnalyse(BaseAnalyse):
             return self._process_by_pattern(symbol_list, fns, futures)
         except KeyboardInterrupt:
             self._cleanup(self.loader, futures)
-            self.Logger.info("User exit")
+            self._logger.info("User exit")
             exit()

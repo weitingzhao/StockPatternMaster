@@ -103,7 +103,7 @@ class TradingPatternChart(BaseChart):
         self.args = args
         self.plugins = plugins
         self.parser = parser
-        self.daily_dir = self.Config.FOLDER_Daily
+        self.daily_dir = self._config.FOLDER_Daily
         # set parameters for args preset
         if args.preset and args.preset_save:
             exit("trading_pattern_chart.py: error: argument --preset: not allowed with argument --preset-save")
@@ -129,12 +129,12 @@ class TradingPatternChart(BaseChart):
             self.period = args.period
         else:
             if self.tf == "Weekly":
-                self.period = self.Config.PLOT_WEEKS
+                self.period = self._config.PLOT_WEEKS
             else:
-                self.period = self.Config.PLOT_DAYS
+                self.period = self._config.PLOT_DAYS
         self.plot_args = {
-            "type": self.Config.PLOT_CHART_TYPE,
-            "style": self.Config.PLOT_CHART_STYLE,
+            "type": self._config.PLOT_CHART_TYPE,
+            "style": self._config.PLOT_CHART_STYLE,
             "volume": args.volume,
             "xrotation": 0,
             "datetime_format": "%d %b %y",
@@ -150,10 +150,10 @@ class TradingPatternChart(BaseChart):
         # save
         if args.save:
             # set parameters
-            self.plot_args["figsize"] = self.Config.PLOT_SIZE \
-                if hasattr(self.Config, "PLOT_SIZE") else (12, 6)
+            self.plot_args["figsize"] = self._config.PLOT_SIZE \
+                if hasattr(self._config, "PLOT_SIZE") else (12, 6)
             self.plot_args["figscale"] = 1
-            self.save_dir = self.Config.FOLDER_Charts
+            self.save_dir = self._config.FOLDER_Charts
             # set save directory
             if args.preset:
                 self.save_dir = self.save_dir / args.preset
@@ -173,10 +173,10 @@ class TradingPatternChart(BaseChart):
         # add some period for sma, ema calculation
         self.max_period = self._get_max_period()
         if args.rs or args.m_rs:
-            idx_path = self.daily_dir / f"{self.Config.PLOT_RS_INDEX}.csv"
+            idx_path = self.daily_dir / f"{self._config.PLOT_RS_INDEX}.csv"
             if not idx_path.is_file():
                 exit(f"Index file not found: {idx_path}")
-            self.idx_cl = self.Service.loading().trading(idx_path).get_data_frame(
+            self.idx_cl = self._service.loading().trading(idx_path).get_data_frame(
                 tf=self.tf,
                 period=self.max_period,
                 column="Close",
@@ -250,7 +250,7 @@ class TradingPatternChart(BaseChart):
             fontdict={"fontweight": "bold"}
         )
 
-        lines_path = self.Config.FOLDER_Lines / f"{symbol}.p"
+        lines_path = self._config.FOLDER_Lines / f"{symbol}.p"
 
         default_lines = {
             "artists": [],
@@ -284,36 +284,36 @@ class TradingPatternChart(BaseChart):
 
     # <editor-fold desc="Watch">
     def _load_watch_list(self, watch):
-        if watch.upper() not in self.Config.WATCH:
+        if watch.upper() not in self._config.WATCH:
             exit(f"Error: No watchlist named '{watch}'")
-        file = self.Config.FOLDER_Watch / self.Config.WATCH[watch.upper()]
+        file = self._config.FOLDER_Watch / self._config.WATCH[watch.upper()]
         if not file.is_file():
             exit(f"Error: File not found {file}")
         return file.read_text().strip("\n").split("\n")
 
     def _save_watch(self, watch_name, watch_value):
         # Add
-        data = self.Engine.json_user().load_symbol_history() if self.Engine.json_user().is_file() else {}
+        data = self._engine.json_user().load_symbol_history() if self._engine.json_user().is_file() else {}
         if "WATCH" not in data:
             data["WATCH"] = {}
         data["WATCH"][watch_name.upper()] = watch_value
         # Save
-        self.Engine.json_user().save(data)
+        self._engine.json_user().save(data)
         exit(f"Added watchlist '{watch_name}' with value '{watch_value}'")
 
     def _remove_watch(self, name):
         # Check
-        if name.upper() not in getattr(self.Config, "WATCH"):
+        if name.upper() not in getattr(self._config, "WATCH"):
             exit(f"Error: No watchlist named: '{name}'")
-        if not self.Engine.json_user().is_file():
+        if not self._engine.json_user().is_file():
             exit("No config file")
         # Delete
-        data = self.Engine.json_user().load_symbol_history()
+        data = self._engine.json_user().load_symbol_history()
         if "WATCH" not in data or name.upper() not in data["WATCH"]:
             exit(f"Error: No watchlist named: '{name}'")
         del data["WATCH"][name.upper()]
         # Save
-        self.Engine.json_user().save(data)
+        self._engine.json_user().save(data)
         exit(f"Watchlist '{name}' removed.")
 
     # </editor-fold>
@@ -321,20 +321,20 @@ class TradingPatternChart(BaseChart):
     # <editor-fold desc="Preset">
     def _load_preset(self, preset):
         # Check
-        if preset not in getattr(self.Config, "PRESET"):
+        if preset not in getattr(self._config, "PRESET"):
             exit(f"Error: No preset named: '{preset}'")
         # Load
-        args_dct = getattr(self.Config, "PRESET")[preset]
+        args_dct = getattr(self._config, "PRESET")[preset]
         if self.args.resume:
             args_dct["resume"] = True
         return self.parser.parse_args(Utils.arg_parse_dict(args_dct))
 
     def _save_preset(self, preset):
         # Check
-        if self.args.watch and self.args.watch.upper() not in self.Config.WATCH:
+        if self.args.watch and self.args.watch.upper() not in self._config.WATCH:
             exit(f"Error: No watchlist named: '{self.args.watch}'")
         # Prepare
-        data = self.Engine.json_user() if self.Engine.json_user().is_file() else {}
+        data = self._engine.json_user() if self._engine.json_user().is_file() else {}
         # get a copy of __dict__ and filter only truthy values into a dict
         opts = {k: v for k, v in self.args.__dict__.items() if v}
         del opts["preset_save"]
@@ -342,22 +342,22 @@ class TradingPatternChart(BaseChart):
             data["PRESET"] = {}
         data["PRESET"][preset] = opts
         # Save
-        self.Engine.json_user().save(data)
+        self._engine.json_user().save(data)
         print(f"Preset saved as '{preset}'")
 
     def _remove_preset(self, preset):
         # Check
-        if preset not in getattr(self.Engine.Config, "PRESET"):
+        if preset not in getattr(self._engine._config, "PRESET"):
             exit(f"Error: No preset named: '{preset}'")
-        if not self.Engine.json_user().is_file():
-            exit(f"File not found: {self.Engine.json_user().Path}")
+        if not self._engine.json_user().is_file():
+            exit(f"File not found: {self._engine.json_user().Path}")
         # Delete
-        data = self.Engine.json_user().load_symbol_history()
+        data = self._engine.json_user().load_symbol_history()
         if "PRESET" not in data or preset not in data["PRESET"]:
             exit(f"Error: No preset named: '{preset}'")
         del data["PRESET"][preset]
         # Save
-        self.Engine.json_user().save(data)
+        self._engine.json_user().save(data)
         exit(f"Preset '{preset}' removed.")
 
     # </editor-fold>
@@ -365,10 +365,10 @@ class TradingPatternChart(BaseChart):
     # <editor-fold desc="Watch & Preset List">
     def _list_watch_and_preset(self):
         # setup watch list and preset list
-        self.watch_list = [i.lower() for i in self.Config.WATCH.keys()] \
-            if hasattr(self.Engine.Config, "WATCH") else []
-        self.preset_lst = [i.lower() for i in self.Config.PRESET.keys()] \
-            if hasattr(self.Engine.Config, "PRESET") else []
+        self.watch_list = [i.lower() for i in self._config.WATCH.keys()] \
+            if hasattr(self._engine._config, "WATCH") else []
+        self.preset_lst = [i.lower() for i in self._config.PRESET.keys()] \
+            if hasattr(self._engine._config, "PRESET") else []
 
         # check & result
         if not len(self.watch_list):
@@ -429,11 +429,11 @@ class TradingPatternChart(BaseChart):
         if url is None:
             # increment only if its newly drawn line
             self.lines[self.tf]["length"] += 1
-            url = f"axhline:{self.Tools.random_char(6)}"
+            url = f"axhline:{self._tools.random_char(6)}"
             self.lines[self.tf]["lines"][url] = y
             self.has_updated = True
 
-        self.line_args["color"] = self.Config.PLOT_AXHLINE_COLOR
+        self.line_args["color"] = self._config.PLOT_AXHLINE_COLOR
         line = axes.axhline(y, url=url, **self.line_args)
         self.lines["artists"].append(line)
 
@@ -445,7 +445,7 @@ class TradingPatternChart(BaseChart):
         if url is None:
             # increment only if its newly drawn line
             self.lines[self.tf]["length"] += 1
-            url = f"hline:{self.Tools.random_char(6)}"
+            url = f"hline:{self._tools.random_char(6)}"
             self.lines[self.tf]["lines"][url] = (
                 y,
                 df.index[x_min],
@@ -457,7 +457,7 @@ class TradingPatternChart(BaseChart):
             # draw line till end of x-axis
             x_max = df.index.get_loc(df.index[-1])
 
-        self.segment_args["colors"] = (self.Config.PLOT_HLINE_COLOR)
+        self.segment_args["colors"] = (self._config.PLOT_HLINE_COLOR)
         line = axes.hlines(y, x_min, x_max, url=url, **self.segment_args)
         self.lines["artists"].append(line)
 
@@ -469,13 +469,13 @@ class TradingPatternChart(BaseChart):
         if url is None:
             # increment only if its newly drawn line
             self.lines[self.tf]["length"] += 1
-            url = f"tline:{self.Tools.random_char(6)}"
+            url = f"tline:{self._tools.random_char(6)}"
             self.lines[self.tf]["lines"][url] = tuple(
                 (df.index[x], y) for x, y in coords
             )
             self.has_updated = True
 
-        self.line_args["color"] = self.Config.PLOT_TLINE_COLOR
+        self.line_args["color"] = self._config.PLOT_TLINE_COLOR
         # Second click to get ending coordinates
         line = axes.axline(*coords, url=url, **self.line_args)
         self.lines["artists"].append(line)
@@ -488,13 +488,13 @@ class TradingPatternChart(BaseChart):
         if url is None:
             # increment only if its newly drawn line
             self.lines[self.tf]["length"] += 1
-            url = f"aline:{self.Tools.random_char(6)}"
+            url = f"aline:{self._tools.random_char(6)}"
             self.lines[self.tf]["lines"][url] = tuple(
                 (df.index[x], y) for x, y in coords
             )
             self.has_updated = True
 
-        self.segment_args["colors"] = (self.Config.PLOT_ALINE_COLOR,)
+        self.segment_args["colors"] = (self._config.PLOT_ALINE_COLOR,)
         line = LineCollection([coords], url=url, **self.segment_args)
         axes.add_collection(line)
         self.lines["artists"].extend(line)
@@ -577,7 +577,7 @@ class TradingPatternChart(BaseChart):
         x = round(event.xdata)
         y: object = round(event.ydata, 2)
 
-        if self.Config.MAGNET_MODE:
+        if self._config.MAGNET_MODE:
             y = self._get_closest_price(x, y)
         if event.key is None:
             self._add_hline(event.inaxes, y)
@@ -670,13 +670,13 @@ class TradingPatternChart(BaseChart):
     @lru_cache(maxsize=6)
     def _prep_data(self, symbol):
         # Step 1. check data source
-        f_path = self.Config.FOLDER_Daily / f"{symbol}.csv"
+        f_path = self._config.FOLDER_Daily / f"{symbol}.csv"
         if not f_path.is_file():
             f_path = self.daily_dir / f"{symbol.lower()}_sme.csv"
             if not f_path.is_file():
                 return None
         # Step 2. load data into data frame
-        df = self.Service.loading().trading(f_path).get_data_frame(
+        df = self._service.loading().trading(f_path).get_data_frame(
             tf=self.tf,
             period=self.max_period,
             to_date=self.args.date
@@ -689,7 +689,7 @@ class TradingPatternChart(BaseChart):
             df["RS"] = Utils.relative_strength(df["Close"], self.idx_cl)
         # Step 3.b. calculate mansfield relative strength
         if self.args.m_rs:
-            rs_period = self.Config.PLOT_M_RS_LEN_W if self.tf == "weekly" else self.Config.PLOT_M_RS_LEN_D
+            rs_period = self._config.PLOT_M_RS_LEN_W if self.tf == "weekly" else self._config.PLOT_M_RS_LEN_D
             # check: prevent crash if local period is less than RS period
             if df_len < rs_period:
                 print(f"WARN: {symbol.upper()} - Inadequate data to plot Mansfield RS. less than {rs_period} candles")
@@ -746,7 +746,7 @@ class TradingPatternChart(BaseChart):
             added_plots.append(
                 mpl.make_addplot(
                     data=df["RS"], panel=1, ylabel="Dorsey RS",
-                    color=self.Config.PLOT_RS_COLOR, width=2.5
+                    color=self._config.PLOT_RS_COLOR, width=2.5
                 )
             )
         # Step 3.b. draw Mansfield Relative Strength local
@@ -756,11 +756,11 @@ class TradingPatternChart(BaseChart):
                 [
                     mpl.make_addplot(
                         data=df["M_RS"], panel="lower", ylabel="Mansfield RS",
-                        color=self.Config.PLOT_M_RS_COLOR, width=2.5
+                        color=self._config.PLOT_M_RS_COLOR, width=2.5
                     ),
                     mpl.make_addplot(
                         data=zero_line, panel="lower", linestyle="dashed",
-                        color=self.Config.PLOT_M_RS_COLOR, width=1.5),
+                        color=self._config.PLOT_M_RS_COLOR, width=1.5),
                 ]
             )
         # Step 3.c. draw simple moving average
@@ -788,7 +788,7 @@ class TradingPatternChart(BaseChart):
                 )
         # Step 3.f. draw delivery levels
         if self.args.dlv and not df["DLV_QTY"].dropna().empty:
-            Utils.get_delivery_levels(df, self.Config)
+            Utils.get_delivery_levels(df, self._config)
 
             self.plot_args["marketcolor_overrides"] = df["MCOverrides"].values
 
@@ -806,9 +806,9 @@ class TradingPatternChart(BaseChart):
 
     def _get_max_period(self):
         if self.tf == "Weekly":
-            return self.Config.PLOT_WEEKS
+            return self._config.PLOT_WEEKS
         else:
-            return self.Config.PLOT_DAYS
+            return self._config.PLOT_DAYS
 
     def _get_tick_locations(self, tick_mdates, dtix: pd.DatetimeIndex):
         """Return the tick locations to be passed to Locator instance."""

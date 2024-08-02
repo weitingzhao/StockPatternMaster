@@ -9,8 +9,8 @@ class PgSqlEngine(BaseEngine):
 
     def __init__(self, config: Config):
         super().__init__(config)
-        self.host = self.Config.DB_CONN.get("host")
-        self.port = self.Config.DB_CONN.get("port")
+        self.host = self._config.DB_CONN.get("host")
+        self.port = self._config.DB_CONN.get("port")
         self.dbname = config.DB_CONN.get("dbname")
         self.user = config.DB_CONN.get("user")
         self.password = config.DB_CONN.get("password")

@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional
 from datetime import datetime, timedelta
-from src.analyses.treading.loader.abstract_loader import AbstractLoader
+from src.services.loading.loader.abstract_loader import AbstractLoader
 
 
 logger = logging.getLogger(__name__)

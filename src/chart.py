@@ -15,10 +15,10 @@ class Chart(BaseChart):
             parser: ArgumentParser
     ) -> chart.TradingPatternChart:
         return chart.TradingPatternChart(
-            self.Analyse,
+            self._analyse,
             args,
             util.Plugin(),
             parser)
 
     def web_visualization(self) -> chart.TradingVisualizeChart:
-        return chart.TradingVisualizeChart(self.Analyse)
+        return chart.TradingVisualizeChart(self._analyse)

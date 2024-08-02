@@ -10,10 +10,10 @@ class Analyse(BaseAnalyse):
 
     # analyses data
     def treading(self, args: ArgumentParser) -> analyse.TradingAnalyse:
-        return analyse.TradingAnalyse(self.Service, args)
+        return analyse.TradingAnalyse(self._service, args)
 
     def symbols(self) -> analyse.SymbolAnalyse:
-        return analyse.SymbolAnalyse(self.Service)
+        return analyse.SymbolAnalyse(self._service)
 
     def pattern_list(self) -> list:
         return analyse.Pattern.get_pattern_list()
